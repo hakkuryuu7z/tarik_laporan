@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Sedang Diperbaiki</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300&display=swap" rel="stylesheet">
+    <style>
+        /* --- Reset dasar --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Mencegah scrollbar muncul */
+            font-family: 'Roboto', sans-serif;
+            background-color: #000;
+        }
+
+        /* --- Latar Belakang Luar Angkasa --- */
+        .space-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            /* Gradient gelap untuk kesan angkasa dalam */
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* Membuat efek bintang dengan CSS (tanpa gambar) */
+        .stars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            display: block;
+            background: transparent url('https://i.imgur.com/YKY28eT.png') repeat top center;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        /* --- Elemen-elemen Gambar (Astronot, Bumi, dll) --- */
+        /* PENTING: Ganti URL gambar di bawah ini dengan file PNG transparan milik Anda sendiri */
+
+        .planet-earth {
+            position: absolute;
+            /* GANTI GAMBAR INI dengan bumi-hancur.png Anda */
+            background-image: url('https://cdn.pixabay.com/photo/2017/09/12/07/32/planet-2741573_1280.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 600px; /* Atur ukuran sesuai gambar Anda */
+            height: 600px;
+            bottom: -150px;
+            right: -100px;
+            z-index: 1;
+            opacity: 0.8;
+            /* Animasi rotasi pelan */
+            animation: rotatePlanet 200s linear infinite;
+        }
+
+        .astronaut {
+            position: absolute;
+            /* GANTI GAMBAR INI dengan astronot.png Anda */
+            background-image: url('https://cdn.pixabay.com/photo/2018/03/12/21/25/hubble-3221057_1280.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 250px; /* Atur ukuran */
+            height: 350px;
+            top: 20%;
+            left: 15%;
+            z-index: 3;
+            /* Animasi melayang */
+            animation: floatAstronaut 6s ease-in-out infinite;
+        }
+
+        .moon {
+            position: absolute;
+            /* GANTI GAMBAR INI dengan bulan.png Anda */
+            background-image: url('https://cdn.pixabay.com/photo/2017/08/30/01/05/milky-way-2695569_1280.jpg');
+            background-size: cover;
+            width: 100px;
+            height: 100px;
+            top: 10%;
+            right: 20%;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #ffffff50;
+            z-index: 1;
+            opacity: 0.7;
+        }
+
+        .comet {
+            position: absolute;
+             /* GANTI GAMBAR INI dengan komet.png Anda */
+            background-image: url('https://www.pngmart.com/files/3/Comet-PNG-Transparent-Image.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 200px;
+            height: 100px;
+            z-index: 0;
+            opacity: 0.8;
+            /* Animasi komet lewat */
+            animation: shootComet 15s linear infinite;
+            top: -100px;
+            left: -200px;
+        }
+
+        /* --- Kotak Konten Teks --- */
+        .content-box {
+            position: relative;
+            z-index: 10; /* Pastikan teks di atas segalanya */
+            text-align: center;
+            color: white;
+            padding: 40px;
+            /* Latar belakang semi-transparan agar teks terbaca */
+            background: rgba(23, 32, 42, 0.8);
+            border: 2px solid rgba(52, 152, 219, 0.5);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            max-width: 80%;
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
+        }
+
+        .content-box h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            /* Efek teks bercahaya */
+            text-shadow: 0 0 10px #3498db, 0 0 20px #3498db;
+        }
+
+        .content-box p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #bdc3c7;
+        }
+
+        /* --- Animasi (Keyframes) --- */
+        @keyframes floatAstronaut {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes rotatePlanet {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shootComet {
+            0% { transform: translateX(0) translateY(0) rotate(-25deg); opacity: 0;}
+            10% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(150vw) translateY(100vh) rotate(-25deg); opacity: 0;}
+        }
+
+        /* --- Responsif untuk HP --- */
+        @media (max-width: 768px) {
+            .content-box h1 { font-size: 2.5em; }
+            .astronaut { width: 150px; height: 200px; left: 5%; top: 15%; }
+            .planet-earth { width: 300px; height: 300px; right: -50px; bottom: -50px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="space-container">
+        <div class="stars"></div>
+        
+        <div class="comet"></div>
+        <div class="moon"></div>
+        <div class="planet-earth"></div> <div class="astronaut"></div>
+
+        <div class="content-box">
+            <h1>SISTEM DALAM PERBAIKAN</h1>
+            <p>Maaf, kami sedang melakukan perbaikan darurat di sektor ini akibat anomali tak terduga. <br>Mohon tunggu sebentar, kami akan segera kembali online.</p>
+        </div>
+    </div>
+
+</body>
+</html>
