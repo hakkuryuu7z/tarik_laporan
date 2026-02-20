@@ -305,7 +305,9 @@
 
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $ip = $_POST['ip_address'];
+        $raw_ip = $_POST['ip_address'];
+        $ip = preg_replace('#^https?://#', '', rtrim($raw_ip, '/'));
+        $ip = explode('/', $ip)[0];
         $tgl_awal = $_POST['tgl_awal'];
         $tgl_akhir = $_POST['tgl_akhir'];
 

@@ -303,10 +303,17 @@
                     </div>
                 </div>
             </div>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
 
-            <button type="submit" class="btn-pull">
-                LANJUT KE PANEL MINGGUAN <i class="fas fa-arrow-right" style="margin-left:8px;"></i>
-            </button>
+                <button type="submit" class="btn-pull">
+                    LANJUT KE PANEL MINGGUAN <i class="fas fa-arrow-right" style="margin-left:8px;"></i>
+                </button>
+
+                <button type="button" class="btn-pull" onclick="submitNewReport()" style="background: linear-gradient(135deg, #6366f1 0%, var(--accent-blue) 100%);">
+                    LAPORAN MINGGUAN NEW <i class="fas fa-plus-circle" style="margin-left:8px;"></i>
+                </button>
+
+            </div>
 
         </form>
     </div>
@@ -371,6 +378,14 @@
             const rotY = Math.min(Math.max(x, -5), 5);
             card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
         });
+
+        function submitNewReport() {
+            const form = document.getElementById('card');
+            // Ubah tujuan form secara dinamis
+            form.action = 'tarik_data_mingguan.php';
+            // Kirim form
+            form.submit();
+        }
     </script>
 </body>
 
