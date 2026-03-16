@@ -1,5 +1,5 @@
 <?php
-// Tidak ada logic PHP server-side yang berat
+// Pastikan file ini menerima data POST
 ?>
 
 <!DOCTYPE html>
@@ -73,7 +73,7 @@
             color: #fff;
         }
 
-        /* --- LOGIN STEP --- */
+        /* --- LOGIN & AUTO WRAPPER --- */
         .login-wrapper {
             background: rgba(245, 158, 11, 0.05);
             border: 1px dashed #f59e0b;
@@ -82,12 +82,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             transition: transform 0.3s;
         }
 
-        .login-wrapper:hover {
-            background: rgba(245, 158, 11, 0.1);
+        .auto-box {
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         .login-text h3 {
@@ -116,6 +121,35 @@
         .btn-login:hover {
             transform: scale(1.05);
             box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn-auto {
+            background: linear-gradient(135deg, var(--purple-glow), #e879f9);
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            max-width: 450px;
+            font-family: 'JetBrains Mono';
+            text-transform: uppercase;
+            font-size: 1rem;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-auto:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(168, 85, 247, 0.5);
+        }
+
+        .btn-auto:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         /* --- SECTION TITLES --- */
@@ -166,14 +200,12 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             position: relative;
             overflow: hidden;
             text-decoration: none;
-            /* Biar jadi link block */
         }
 
-        /* Indikator Warna di Kiri */
         .module-card::before {
             content: '';
             position: absolute;
@@ -192,7 +224,6 @@
             background: var(--green-glow);
         }
 
-        /* Hover Effects */
         .module-card:hover {
             transform: translateY(-5px);
             background: rgba(30, 41, 59, 0.9);
@@ -207,7 +238,6 @@
             box-shadow: 0 10px 30px -10px rgba(34, 197, 94, 0.3);
         }
 
-        /* Icon Box */
         .mod-icon {
             width: 45px;
             height: 45px;
@@ -229,7 +259,6 @@
             color: var(--green-glow);
         }
 
-        /* Text Info */
         .mod-info {
             flex-grow: 1;
         }
@@ -249,7 +278,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Action Arrow */
         .mod-arrow {
             color: var(--text-dim);
             font-size: 0.9rem;
@@ -267,7 +295,6 @@
             color: #fff;
         }
 
-        /* Done State */
         .module-card.done {
             opacity: 0.5;
             filter: grayscale(0.8);
@@ -279,7 +306,6 @@
             color: #4ade80;
         }
 
-        /* Back Button */
         .footer-nav {
             margin-top: 50px;
             text-align: center;
@@ -368,12 +394,21 @@
 
             <div class="login-wrapper">
                 <div class="login-text">
-                    <h3><i class="fas fa-key"></i> STEP 1: AUTHORIZATION</h3>
-                    <p>Wajib login dulu agar browser bisa akses data.</p>
+                    <h3><i class="fas fa-key"></i> STEP 1: AUTHORIZATION (MANUAL)</h3>
+                    <p>Login manual jika tidak ingin menggunakan bot.</p>
                 </div>
                 <a href="http://<?= $ip ?>/login" target="_blank" class="btn-login">
                     LOGIN IAS <i class="fas fa-external-link-alt"></i>
                 </a>
+            </div>
+
+            <div class="auto-box">
+                <h3 style="color: var(--purple-glow); font-size: 1rem; margin: 0 0 10px 0;"><i class="fas fa-robot"></i> STEP 2: AUTOMATION DOWNLOAD</h3>
+                <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px;">Bot akan melakukan login ganda dan mendownload semua file secara otomatis.</p>
+                <button id="btn-tarik-semua" class="btn-auto">
+                    <i class="fas fa-cloud-download-alt"></i> JALANKAN BOT OTOMATIS
+                </button>
+                <p id="status-download" style="margin-top: 15px; font-size: 0.85rem; color: var(--accent-pink); display: none;"></p>
             </div>
 
             <div class="zone-title zone-print">
@@ -417,13 +452,82 @@
 
         <script>
             function markDone(el) {
-                // Efek Selesai: Redupkan kartu dan ganti teks
                 setTimeout(() => {
                     el.classList.add('done');
                     el.querySelector('.mod-sub').innerText = "SUDAH DIKLIK ✅";
                     el.querySelector('.mod-arrow').innerHTML = '<i class="fas fa-check"></i>';
                 }, 500);
             }
+
+            // SCRIPT API NODE.JS UNTUK BOT BULANAN
+            document.getElementById('btn-tarik-semua').addEventListener('click', async function() {
+                const ipIAS = "<?= $ip ?>";
+                const userIAS = "<?= $_POST['username_ias'] ?? '' ?>";
+                const passIAS = "<?= $_POST['password_ias'] ?? '' ?>";
+                const koneksiIAS = "<?= $_POST['koneksi_ias'] ?? 'PRODUCTION' ?>";
+                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Bulanan_Otomatis' ?>";
+
+                const allLinks = [
+                    <?php
+                    foreach ($menu_urls as $name => $url) {
+                        echo "{ url: '$url', type: 'pdf', name: '" . addslashes($name) . "' },\n";
+                    }
+                    foreach ($download_urls as $name => $url) {
+                        echo "{ url: '$url', type: 'excel', name: '" . addslashes($name) . "' },\n";
+                    }
+                    ?>
+                ];
+
+                if (!confirm(`Bot akan melakukan Auto-Login (${koneksiIAS}) dan menyimpan ${allLinks.length} Laporan Bulanan ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+
+                const btn = this;
+                const status = document.getElementById('status-download');
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BOT SEDANG BEKERJA...';
+                status.style.display = 'block';
+                status.innerHTML = 'Bot sedang login dan menarik data laporan bulanan... Harap bersabar.';
+
+                try {
+                    // Selalu tembak localhost untuk menjalankan bot di komputer masing-masing client
+                    const apiUrl = `http://localhost:3030/api/tarik`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ip: ipIAS,
+                            username: userIAS,
+                            password: passIAS,
+                            folderName: namaFolder,
+                            koneksi: koneksiIAS,
+                            links: allLinks,
+                            doPreProcess: false // Laporan bulanan gak butuh hitstok dulu, langsung tarik aja
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> PENARIKAN SELESAI!';
+                        status.innerHTML = result.message || 'Semua laporan bulanan berhasil di-download!';
+                    } else {
+                        throw new Error(result.error || 'Terjadi kesalahan pada bot');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GAGAL KONEK KE BOT';
+                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message} (Pastikan Bot Node.js sudah dinyalakan)</span>`;
+                }
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> JALANKAN BOT OTOMATIS';
+                }, 8000);
+            });
         </script>
 
     <?php

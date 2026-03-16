@@ -113,7 +113,6 @@
             padding-bottom: 1.5rem;
         }
 
-        /* --- STYLE TOMBOL KEMBALI --- */
         .back-link {
             text-decoration: none;
             color: var(--text-muted);
@@ -175,7 +174,8 @@
             font-size: 1rem;
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid var(--glass-border);
@@ -186,17 +186,26 @@
             font-size: 0.95rem;
             transition: all 0.3s;
             color-scheme: dark;
+            appearance: none;
+            outline: none;
         }
 
-        input:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--accent-purple);
             background: rgba(0, 0, 0, 0.4);
             box-shadow: 0 0 20px rgba(192, 132, 252, 0.2);
         }
 
-        input:focus+.input-icon {
+        input:focus+.input-icon,
+        select:focus+.input-icon {
             color: var(--accent-purple);
+        }
+
+        select option {
+            background: #141423;
+            color: #fff;
         }
 
         .btn-group {
@@ -280,6 +289,43 @@
                 <div class="input-wrapper">
                     <i class="fas fa-network-wired input-icon"></i>
                     <input type="text" name="ip_address" placeholder="172.31.xxx.xxx" required autocomplete="off">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>Username IAS</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" name="username_ias" placeholder="MWS" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Password IAS</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" name="password_ias" placeholder="***" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>Koneksi IAS</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-server input-icon"></i>
+                        <select name="koneksi_ias" required>
+                            <option value="PRODUCTION" selected>PRODUCTION</option>
+                            <option value="SIMULASI">SIMULASI</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Nama Folder Penyimpanan</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-folder-open input-icon"></i>
+                        <input type="text" name="folder_name" placeholder="Contoh: Laporan_Bulanan" required autocomplete="off">
+                    </div>
                 </div>
             </div>
 
