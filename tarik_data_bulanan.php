@@ -489,8 +489,9 @@
                 status.innerHTML = 'Bot sedang login dan menarik data laporan bulanan... Harap bersabar.';
 
                 try {
-                    // Selalu tembak localhost untuk menjalankan bot di komputer masing-masing client
-                    const apiUrl = `http://localhost:3030/api/tarik`;
+                    // PENTING: Gunakan window.location.hostname agar nembak ke server pusat
+                    const serverIP = window.location.hostname;
+                    const apiUrl = `http://${serverIP}:3030/api/tarik`;
 
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -504,7 +505,7 @@
                             folderName: namaFolder,
                             koneksi: koneksiIAS,
                             links: allLinks,
-                            doPreProcess: false // Laporan bulanan gak butuh hitstok dulu, langsung tarik aja
+                            doPreProcess: false
                         })
                     });
 
@@ -512,7 +513,22 @@
 
                     if (response.ok) {
                         btn.innerHTML = '<i class="fas fa-check-circle"></i> PENARIKAN SELESAI!';
-                        status.innerHTML = result.message || 'Semua laporan bulanan berhasil di-download!';
+
+                        // Siapkan URL Download
+                        const downloadUrl = `http://${serverIP}:3030/download-zip/${result.downloadFile}`;
+
+                        // Tampilkan pesan sukses & tombol fallback
+                        status.innerHTML = `<b>Sukses!</b> Paket Laporan ZIP siap.<br><br>
+                        <a href="${downloadUrl}" style="color:#fff; background: linear-gradient(135deg, var(--green-glow), #15803d); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px; box-shadow: 0 5px 15px rgba(34,197,94,0.4);">
+                            <i class="fas fa-download"></i> KLIK DI SINI JIKA DOWNLOAD TIDAK MUNCUL
+                        </a>`;
+
+                        // Pancing Auto-Download
+                        if (result.downloadFile) {
+                            setTimeout(() => {
+                                window.location.href = downloadUrl;
+                            }, 1000);
+                        }
                     } else {
                         throw new Error(result.error || 'Terjadi kesalahan pada bot');
                     }
@@ -520,7 +536,7 @@
                 } catch (error) {
                     console.error('Error:', error);
                     btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GAGAL KONEK KE BOT';
-                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message} (Pastikan Bot Node.js sudah dinyalakan)</span>`;
+                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message} (Pastikan Bot Node.js di server sudah nyala)</span>`;
                 }
 
                 setTimeout(() => {

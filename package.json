@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/hakkuryuu7z/tarik_laporan#readme",
   "dependencies": {
+    "archiver": "^7.0.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "puppeteer": "^24.39.1"
