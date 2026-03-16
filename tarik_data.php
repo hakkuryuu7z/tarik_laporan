@@ -85,13 +85,57 @@
             text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
         }
 
+        .header-card {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         .login-box {
             background: rgba(245, 158, 11, 0.05);
             border: 1px dashed #f59e0b;
             padding: 1.5rem;
             border-radius: 15px;
             text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* --- AUTO DOWNLOAD BOX --- */
+        .auto-box {
+            background: rgba(34, 211, 238, 0.05);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
             margin-bottom: 40px;
+        }
+
+        .btn-auto {
+            background: var(--btn-green);
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            max-width: 450px;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+            font-family: 'JetBrains Mono';
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        .btn-auto:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(34, 197, 94, 0.5);
+        }
+
+        .btn-auto:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .step-label {
@@ -102,6 +146,10 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .step-label.cyan {
+            color: var(--accent);
         }
 
         .step-desc {
@@ -210,8 +258,6 @@
         .type-igr::before {
             background: var(--accent-igr);
         }
-
-        /* Ungu untuk IGR */
 
         .file-row:hover {
             background: rgba(34, 211, 238, 0.05);
@@ -451,6 +497,15 @@
                 <a href="http://<?= $ip ?>/login" target="_blank" class="btn-login">LOGIN IAS <i class="fas fa-external-link-alt"></i></a>
             </div>
 
+            <div class="auto-box">
+                <span class="step-label cyan"><i class="fas fa-robot"></i> LANGKAH 2: AUTOMATION</span>
+                <p class="step-desc">Tarik semua link di bawah secara otomatis (Mohon jangan tutup halaman saat proses berjalan).</p>
+                <button id="btn-tarik-semua" class="btn-auto">
+                    <i class="fas fa-cloud-download-alt"></i> TARIK SEMUA DATA OTOMATIS
+                </button>
+                <p id="status-download" style="margin-top: 15px; font-size: 0.85rem; color: var(--accent); display: none;"></p>
+            </div>
+
             <div class="section-title">
                 <i class="fas fa-print"></i> LAPORAN WEB (Buka & Print) <div class="line" style="flex-grow:1; height:1px; background:rgba(34,211,238,0.2)"></div>
             </div>
@@ -542,6 +597,89 @@
                     el.innerHTML = '<i class="fas fa-check"></i> SELESAI';
                 }, 800);
             }
+
+            // --- SCRIPT BARU UNTUK MENGIRIM PERINTAH KE NODE.JS API ---
+            document.getElementById('btn-tarik-semua').addEventListener('click', async function() {
+                const ipIAS = "<?= $ip ?>";
+                const tglAwal = "<?= $tgl_awal ?>";
+                const tglAkhir = "<?= $tgl_akhir ?>";
+                const userIAS = "<?= $_POST['username_ias'] ?? '' ?>";
+                const passIAS = "<?= $_POST['password_ias'] ?? '' ?>";
+                const koneksiIAS = "<?= $_POST['koneksi_ias'] ?? 'PRODUCTION' ?>";
+                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Otomatis' ?>";
+
+                const allLinks = [
+                    <?php
+                    $all_bot_links = [];
+                    foreach ($print_links as $l) {
+                        $all_bot_links[] = ['url' => $l['url'], 'type' => 'pdf', 'name' => $l['name']];
+                    }
+                    foreach ($download_links as $l) {
+                        $type = (isset($l['ext']) && $l['ext'] == 'pdf') ? 'pdf' : 'excel';
+                        $all_bot_links[] = ['url' => $l['url'], 'type' => $type, 'name' => $l['name']];
+                    }
+                    foreach ($igr_links as $l) {
+                        $type = ($l['type'] == 'excel') ? 'excel' : 'pdf';
+                        $all_bot_links[] = ['url' => $l['url'], 'type' => $type, 'name' => $l['name']];
+                    }
+                    foreach ($all_bot_links as $b) {
+                        $safeName = addslashes($b['name']);
+                        echo "{ url: '" . $b['url'] . "', type: '" . $b['type'] . "', name: '" . $safeName . "' },\n";
+                    }
+                    ?>
+                ];
+
+                if (!confirm(`Bot akan login menggunakan koneksi ${koneksiIAS}, lalu menyimpan file ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+
+                const btn = this;
+                const status = document.getElementById('status-download');
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BOT SEDANG BEKERJA...';
+                status.style.display = 'block';
+                status.innerHTML = 'Bot sedang mengeksekusi double-login dan menarik data... Harap bersabar.';
+
+                try {
+                    const serverIP = window.location.hostname;
+                    const apiUrl = `http://${serverIP}:3030/api/tarik`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ip: ipIAS,
+                            username: userIAS,
+                            password: passIAS,
+                            folderName: namaFolder,
+                            koneksi: koneksiIAS, // <--- Data Koneksi dikirim ke Node.js
+                            links: allLinks
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> PENARIKAN SELESAI!';
+                        status.innerHTML = result.message;
+                    } else {
+                        throw new Error(result.error || 'Terjadi kesalahan pada bot');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GAGAL KONEK KE BOT';
+                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message}</span>`;
+                }
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> TARIK SEMUA DATA OTOMATIS';
+                }, 8000);
+            });
+            // --- AKHIR SCRIPT NODE.JS API ---
+            // --- AKHIR SCRIPT NODE.JS API ---
 
             // Particle System
             const canvas = document.getElementById('bg-canvas');

@@ -1,5 +1,5 @@
 <?php
-// Wildan, pastikan file ini menerima data POST dari laporan_mingguan.php
+// Pastikan file ini menerima data POST dari laporan_mingguan.php
 ?>
 
 <!DOCTYPE html>
@@ -78,7 +78,7 @@
             padding: 1.5rem;
             border-radius: 15px;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         .btn-login {
@@ -92,6 +92,62 @@
             align-items: center;
             gap: 10px;
             transition: 0.3s;
+        }
+
+        /* KOTAK AUTO BOT */
+        .auto-box {
+            background: rgba(34, 211, 238, 0.05);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .btn-auto {
+            background: var(--btn-green);
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            max-width: 450px;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+            font-family: 'JetBrains Mono';
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        .btn-auto:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(34, 197, 94, 0.5);
+        }
+
+        .btn-auto:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .step-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .step-desc {
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
         }
 
         .section-title {
@@ -208,7 +264,7 @@
             color: var(--accent);
         }
 
-        /* --- CUSTOM MODAL ALERT STYLE --- */
+        /* MODAL ALERT */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -303,19 +359,17 @@
 <body>
     <div id="customAlert" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
+            <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="modal-title">Perhatian!</div>
             <div class="modal-body">
-                Pastikan Anda sudah melakukan proses berikut agar data akurat:
+                Bot otomatis akan melakukan tugas ini untuk Anda:
                 <br>
                 <div class="modal-list">
-                    <i class="fas fa-check-circle" style="color:var(--accent)"></i> 1. Proses <b>HITSTOK</b><br>
-                    <i class="fas fa-check-circle" style="color:var(--accent)"></i> 2. Proses <b>LPP</b>
+                    <i class="fas fa-robot" style="color:var(--accent)"></i> 1. Proses <b>HITSTOK</b><br>
+                    <i class="fas fa-robot" style="color:var(--accent)"></i> 2. Proses <b>LPP</b>
                 </div>
                 <br><br>
-                <small style="color: var(--text-dim)">Jika belum, data yang ditarik tidak akan akurat.</small>
+                <small style="color: var(--text-dim)">Mohon tunggu dengan sabar saat bot beraksi.</small>
             </div>
             <button class="btn-confirm" onclick="closeAlert()">SAYA MENGERTI</button>
         </div>
@@ -330,13 +384,11 @@
         $tgl_awal = $_POST['tgl_awal'];
         $tgl_akhir = $_POST['tgl_akhir'];
 
-        // Format tanggal sesuai kebutuhan link
         $t1_s = date('d/m/Y', strtotime($tgl_awal));
         $t2_s = date('d/m/Y', strtotime($tgl_akhir));
         $t1_d = date('d-m-Y', strtotime($tgl_awal));
         $t2_d = date('d-m-Y', strtotime($tgl_akhir));
 
-        // Kelompok Data Berdasarkan Request
         $groups = [
             "1. Register BPB" => [
                 ['name' => '1. 2P REGISTER BPB (BATAL)', 'url' => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'pdf'],
@@ -372,8 +424,17 @@
             </div>
 
             <div class="login-box">
-                <span style="color:#f59e0b; font-weight:bold; font-size:0.8rem; display:block; margin-bottom:10px;">OTORISASI WAJIB</span>
+                <span style="color:#f59e0b; font-weight:bold; font-size:0.8rem; display:block; margin-bottom:10px;">OTORISASI MANUAL (JIKA PERLU)</span>
                 <a href="http://<?= $ip ?>/login" target="_blank" class="btn-login">LOGIN IAS <i class="fas fa-external-link-alt"></i></a>
+            </div>
+
+            <div class="auto-box">
+                <span class="step-label"><i class="fas fa-robot"></i> LANGKAH 2: AUTOMATION HITSTOK + LPP + DOWNLOAD</span>
+                <p class="step-desc">Bot akan melakukan Hitstok, LPP, lalu mendownload semua file di bawah secara otomatis.</p>
+                <button id="btn-tarik-semua" class="btn-auto">
+                    <i class="fas fa-cloud-download-alt"></i> JALANKAN BOT OTOMATIS
+                </button>
+                <p id="status-download" style="margin-top: 15px; font-size: 0.85rem; color: var(--accent); display: none;"></p>
             </div>
 
             <?php foreach ($groups as $title => $files): ?>
@@ -402,24 +463,17 @@
         </div>
 
         <script>
-            // Alert saat halaman dibuka
-            // Fungsi untuk memunculkan alert saat halaman load
             window.onload = function() {
                 setTimeout(() => {
                     document.getElementById('customAlert').classList.add('active');
-                }, 500); // Muncul setelah 0.5 detik agar efek smooth
+                }, 500);
             };
 
-            // Fungsi untuk menutup alert
             function closeAlert() {
                 document.getElementById('customAlert').classList.remove('active');
             }
-
-            // Tambahan: Menutup modal jika menekan tombol Escape di keyboard
             document.addEventListener('keydown', function(e) {
-                if (e.key === "Escape") {
-                    closeAlert();
-                }
+                if (e.key === "Escape") closeAlert();
             });
 
             function markDone(el) {
@@ -429,7 +483,85 @@
                 }, 1000);
             }
 
-            // Particle System Dasar
+            // SCRIPT API NODE.JS DENGAN INSTRUKSI PRE-PROCESS
+            document.getElementById('btn-tarik-semua').addEventListener('click', async function() {
+                const ipIAS = "<?= $ip ?>";
+                const tglAwal = "<?= $tgl_awal ?>";
+                const tglAkhir = "<?= $tgl_akhir ?>";
+                // Tanggal format slash (dd/mm/yyyy) untuk dikirim ke bot agar diisi di form LPP
+                const tglAwalSlash = "<?= $t1_s ?>";
+                const tglAkhirSlash = "<?= $t2_s ?>";
+
+                const userIAS = "<?= $_POST['username_ias'] ?? '' ?>";
+                const passIAS = "<?= $_POST['password_ias'] ?? '' ?>";
+                const koneksiIAS = "<?= $_POST['koneksi_ias'] ?? 'PRODUCTION' ?>";
+                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Otomatis' ?>";
+
+                const allLinks = [
+                    <?php
+                    foreach ($groups as $title => $files) {
+                        foreach ($files as $f) {
+                            $safeName = addslashes($f['name']);
+                            echo "{ url: '" . $f['url'] . "', type: '" . $f['type'] . "', name: '" . $safeName . "' },\n";
+                        }
+                    }
+                    ?>
+                ];
+
+                if (!confirm(`Bot akan melakukan HITSTOK & LPP, lalu menyimpan ${allLinks.length} file ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+
+                const btn = this;
+                const status = document.getElementById('status-download');
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BOT SEDANG BEKERJA...';
+                status.style.display = 'block';
+                status.innerHTML = 'Bot sedang login dan memproses HITSTOK & LPP. Tolong jangan sentuh mouse/keyboard.';
+
+                try {
+                    const serverIP = window.location.hostname;
+                    const apiUrl = `http://${serverIP}:3030/api/tarik`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ip: ipIAS,
+                            username: userIAS,
+                            password: passIAS,
+                            folderName: namaFolder,
+                            koneksi: koneksiIAS,
+                            links: allLinks,
+                            // KASIH TAU BOT UNTUK NGERJAIN HITSTOK & LPP
+                            doPreProcess: true,
+                            t1: tglAwalSlash,
+                            t2: tglAkhirSlash
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> SEMUA PROSES SELESAI!';
+                        status.innerHTML = result.message;
+                    } else {
+                        throw new Error(result.error || 'Terjadi kesalahan pada bot');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GAGAL KONEK KE BOT';
+                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message}</span>`;
+                }
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> JALANKAN BOT OTOMATIS';
+                }, 8000);
+            });
+
             const canvas = document.getElementById('bg-canvas');
             const ctx = canvas.getContext('2d');
             let particles = [];
