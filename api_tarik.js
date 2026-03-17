@@ -10,11 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- ENDPOINT UNTUK DOWNLOAD FILE ZIP ---
 app.get('/download-zip/:filename', (req, res) => {
     const fileName = req.params.filename;
     const filePath = path.join(os.homedir(), 'Downloads', fileName);
-    
     if (fs.existsSync(filePath)) {
         res.download(filePath);
     } else {
@@ -25,10 +23,7 @@ app.get('/download-zip/:filename', (req, res) => {
 app.post('/api/tarik', async (req, res) => {
     let { ip, username, password, folderName, koneksi, links, doPreProcess, t1, t2 } = req.body;
 
-    if (!ip || !links || links.length === 0) {
-        return res.status(400).json({ error: 'Data target IP atau links kosong.' });
-    }
-
+    if (!ip || !links || links.length === 0) return res.status(400).json({ error: 'Data target IP kosong.' });
     if (!folderName || folderName.trim() === '') folderName = 'Laporan_Otomatis';
     if (!koneksi) koneksi = 'PRODUCTION';
 
@@ -37,26 +32,27 @@ app.post('/api/tarik', async (req, res) => {
     
     const safeFolderName = folderName.replace(/[^a-zA-Z0-9-_ \(\)]/g, '_');
     const targetFolder = path.join(os.homedir(), 'Downloads', safeFolderName);
-    
-    if (!fs.existsSync(targetFolder)) {
-        fs.mkdirSync(targetFolder, { recursive: true });
-    }
+    if (!fs.existsSync(targetFolder)) fs.mkdirSync(targetFolder, { recursive: true });
 
     let browser;
     try {
         browser = await puppeteer.launch({ 
-            headless: true, // GAIB & HEMAT RAM
-            defaultViewport: null 
+            headless: true, // <--- UDAH JADI SILUMAN LAGI BIAR ENTENG! 👻
+            defaultViewport: null,
+            args: ['--start-maximized']
         });
         const page = await browser.newPage();
-
         const client = await page.target().createCDPSession();
-        await client.send('Page.setDownloadBehavior', {
-            behavior: 'allow',
-            downloadPath: targetFolder
+        await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: targetFolder });
+
+        let pesanPopUp = "";
+        page.on('dialog', async dialog => { 
+            pesanPopUp = dialog.message();
+            await dialog.accept(); 
         });
         
-        async function lakukanLogin(u, p, kon) {
+        async function lakukanLogin(u, p, kon, isPemancing = false) {
+            pesanPopUp = "";
             await page.goto(`http://${ip}/login`, { waitUntil: 'networkidle2' });
             await new Promise(r => setTimeout(r, 1000));
             
@@ -65,29 +61,79 @@ app.post('/api/tarik', async (req, res) => {
                 selects.forEach(selectBox => {
                     Array.from(selectBox.options).forEach(opt => {
                         if(opt.text.toUpperCase() === koneksiPilihan.toUpperCase() || opt.value.toUpperCase() === koneksiPilihan.toUpperCase()) {
-                            selectBox.value = opt.value;
-                            selectBox.dispatchEvent(new Event('change'));
+                            selectBox.value = opt.value; selectBox.dispatchEvent(new Event('change'));
                         }
                     });
                 });
             }, kon);
 
-            await page.type('input[type="text"]', u, { delay: 20 });
-            await page.type('input[type="password"]', p, { delay: 20 });
+            await page.type('input[type="text"]', u, { delay: 30 });
+            await page.type('input[type="password"]', p, { delay: 30 });
             
             await page.evaluate(() => {
                 const btns = Array.from(document.querySelectorAll('button, a, input[type="submit"]'));
                 const loginBtn = btns.find(b => b.innerText.toLowerCase().includes('login') || b.value?.toLowerCase().includes('login'));
                 if (loginBtn) loginBtn.click();
             });
-            await new Promise(r => setTimeout(r, 4000));
+            
+            console.log(`   [INFO] Menunggu pop-up IAS (User: ${u})...`);
+            let diklik = false;
+            for (let i = 1; i <= 8; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                try {
+                    diklik = await page.evaluate(() => {
+                        let btnOk = document.querySelector('.swal-button--confirm, .swal2-confirm, .swal2-styled');
+                        if (!btnOk) {
+                            const btns = Array.from(document.querySelectorAll('button'));
+                            btnOk = btns.find(b => b.textContent && b.textContent.trim().toUpperCase() === 'OK');
+                        }
+                        if (btnOk && btnOk.offsetParent !== null) {
+                            btnOk.click(); return true;
+                        }
+                        return false;
+                    });
+                    if (diklik) {
+                        console.log(`   [INFO] Tombol OK ungu berhasil di-klik untuk user ${u}!`);
+                        await new Promise(r => setTimeout(r, 1500)); 
+                        break; 
+                    }
+                } catch (err) { }
+            }
+            
+            if (isPemancing) {
+                console.log(`   [INFO] Tugas rst selesai, balik ke halaman login awal...`);
+                await page.goto(`http://${ip}/login`, { waitUntil: 'networkidle2' });
+                return; 
+            }
+
+            let isSuccess = false;
+            for (let detik = 1; detik <= 10; detik++) {
+                await new Promise(r => setTimeout(r, 1000)); 
+                const isPasswordBoxGone = await page.evaluate(() => {
+                    const passBox = document.querySelector('input[type="password"]');
+                    return passBox === null || passBox.offsetParent === null; 
+                });
+                if (isPasswordBoxGone) {
+                    isSuccess = true;
+                    console.log(`   [INFO] Dashboard terbaca! Berhasil masuk. ⚡`);
+                    break; 
+                }
+            }
+
+            if (!isSuccess) {
+                throw new Error(`Login Gagal (User: ${u}). Cek kembali Password atau koneksinya!`); 
+            }
         }
 
         console.log(`-> (Step 1) Login Pemancing (rst)...`);
-        await lakukanLogin('rst', 'rst', koneksi);
+        try {
+            await lakukanLogin('rst', 'rst', koneksi, true); 
+        } catch (err) {
+            console.log(`   [INFO] Pemancing lewat. Lanjut Step 2...`);
+        }
 
         console.log(`-> (Step 2) Login User Asli (${username || 'MWS'})...`);
-        await lakukanLogin(username, password, koneksi);
+        await lakukanLogin(username, password, koneksi, false);
 
         if (doPreProcess) {
             console.log(`\n=== MENJALANKAN TUGAS PRASYARAT ===`);
@@ -99,9 +145,9 @@ app.post('/api/tarik', async (req, res) => {
                     const hitBtn = btns.find(b => b.innerText.toUpperCase().includes('PROSES HITUNG ULANG STOCK'));
                     if(hitBtn) hitBtn.click();
                 });
-                console.log(`   [HITSTOK] Diproses. Menunggu 15 detik agar tuntas...`);
-                await new Promise(r => setTimeout(r, 15000)); 
-            } catch(e) { console.log(`   [ERROR] Gagal proses Hitstok:`, e.message); }
+                console.log(`   [HITSTOK] Diproses. Menunggu server merespon...`);
+                await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {});
+            } catch(e) { console.log(`   [WARNING] Hitstok:`, e.message); }
 
             console.log(`-> [LPP] Membuka menu Proses LPP...`);
             try {
@@ -113,9 +159,9 @@ app.post('/api/tarik', async (req, res) => {
                     const lppBtn = btns.find(b => b.innerText.toUpperCase() === 'PROSES');
                     if(lppBtn) lppBtn.click();
                 }, t1, t2);
-                console.log(`   [LPP] Diproses. Menunggu 15 detik agar tuntas...`);
-                await new Promise(r => setTimeout(r, 15000));
-            } catch(e) { console.log(`   [ERROR] Gagal proses LPP:`, e.message); }
+                console.log(`   [LPP] Diproses. Menunggu server merespon...`);
+                await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {});
+            } catch(e) { console.log(`   [WARNING] LPP:`, e.message); }
             console.log(`=== PRASYARAT SELESAI ===\n`);
         }
 
@@ -127,17 +173,17 @@ app.post('/api/tarik', async (req, res) => {
             if (item.type === 'excel') {
                 console.log(`   [EXCEL] Mendownload: ${safeName}...`);
                 const filesBefore = fs.readdirSync(targetFolder);
-                try { await page.goto(item.url, { timeout: 10000 }); } catch(e) {}
+                try { await page.goto(item.url, { timeout: 15000 }).catch(()=>{}); } catch(e) {}
                 
                 let downloadedFile = null;
-                for (let wait = 0; wait < 30; wait++) {
+                for (let wait = 0; wait < 60; wait++) {
                     await new Promise(r => setTimeout(r, 1000));
                     const filesNow = fs.readdirSync(targetFolder);
                     const newFiles = filesNow.filter(f => !filesBefore.includes(f));
                     const isDownloading = filesNow.some(f => f.endsWith('.crdownload') || f.endsWith('.tmp'));
                     if (newFiles.length > 0 && !isDownloading) {
                         downloadedFile = newFiles.find(f => !f.endsWith('.crdownload') && !f.endsWith('.tmp'));
-                        if (downloadedFile) break;
+                        if (downloadedFile) break; 
                     }
                 }
 
@@ -148,13 +194,12 @@ app.post('/api/tarik', async (req, res) => {
                     try {
                         if (fs.existsSync(newPath)) fs.unlinkSync(newPath);
                         fs.renameSync(oldPath, newPath);
-                    } catch(err) { console.log(`   -> [WARNING] Gagal ganti nama: ${err.message}`); }
+                    } catch(err) {}
                 }
             } else {
                 try {
                     console.log(`   [CEK TIPE] Menganalisa data: ${safeName}...`);
                     
-                    // JURUS BYPASS NATIVE PDF (Mencegah Layar Abu-Abu)
                     const fileAction = await page.evaluate(async (url, filename) => {
                         try {
                             const res = await fetch(url);
@@ -175,12 +220,12 @@ app.post('/api/tarik', async (req, res) => {
 
                     if (fileAction === 'NATIVE_PDF') {
                         console.log(`   -> [NATIVE PDF] Bypass berhasil! Mendownload: ${safeName}.pdf`);
-                        await new Promise(r => setTimeout(r, 4000)); // Beri waktu download selesai
+                        await new Promise(r => setTimeout(r, 3000)); 
                     } 
                     else if (fileAction === 'HTML') {
                         console.log(`   -> [HTML] Merender Halaman Web ke: ${safeName}.pdf`);
-                        await page.goto(item.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-                        await new Promise(r => setTimeout(r, 2500)); 
+                        await page.goto(item.url, { waitUntil: 'networkidle0', timeout: 45000 }).catch(()=>{});
+                        await new Promise(r => setTimeout(r, 1000)); 
                         
                         await page.evaluate(() => {
                             document.querySelectorAll('a, button').forEach(btn => {
@@ -199,10 +244,21 @@ app.post('/api/tarik', async (req, res) => {
             }
         }
         
+        // ====================================================
+        // JURUS CUCI TANGAN (LOGOUT) SETELAH BERES
+        // ====================================================
+        console.log(`\n=== MEMBERSIHKAN JEJAK (LOGOUT) ===`);
+        try {
+            await page.goto(`http://${ip}/logout`, { waitUntil: 'networkidle2', timeout: 15000 });
+            console.log(`   [INFO] Berhasil Logout dari sistem IAS! 🚪🚶‍♂️`);
+            await new Promise(r => setTimeout(r, 2000)); // Kasih napas sebelum diclose
+        } catch (err) {
+            console.log(`   [WARNING] Abaikan jika gagal logout: ${err.message}`);
+        }
+        
         await browser.close();
         console.log(`\n=== SEMUA TUGAS SELESAI, MEMBUNGKUS KE ZIP ===`);
 
-        // --- PROSES ZIPPER ---
         await new Promise((resolve, reject) => {
             const zipFileName = `${safeFolderName}.zip`;
             const zipPath = path.join(os.homedir(), 'Downloads', zipFileName);
@@ -210,16 +266,24 @@ app.post('/api/tarik', async (req, res) => {
             const archive = archiver('zip', { zlib: { level: 9 } });
 
             output.on('close', () => {
-                console.log(`[ZIP] Berhasil dibuat: ${zipFileName} (${archive.pointer()} bytes)`);
+                console.log(`[ZIP] Berhasil dibuat: ${zipFileName}`);
+                
                 res.json({ 
                     success: true, 
                     message: `Sukses! File ZIP siap didownload.`,
                     downloadFile: zipFileName 
                 });
+
+                try {
+                    if (fs.existsSync(targetFolder)) {
+                        fs.rmSync(targetFolder, { recursive: true, force: true });
+                    }
+                } catch (err) {}
+
                 resolve();
             });
+
             archive.on('error', (err) => reject(err));
-            
             archive.pipe(output);
             archive.directory(targetFolder, false); 
             archive.finalize();
@@ -234,5 +298,5 @@ app.post('/api/tarik', async (req, res) => {
 
 const PORT = 3030;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[🚀] API MEGA BOT (PDF BYPASS + ZIP) STANDBY DI PORT ${PORT}`);
+    console.log(`[🚀] API MEGA BOT (AUTO LOGOUT & SILUMAN) STANDBY DI PORT ${PORT}`);
 });
