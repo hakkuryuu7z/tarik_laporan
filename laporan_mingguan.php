@@ -193,6 +193,7 @@
             cursor: pointer;
             border-radius: 12px;
             transition: 0.3s;
+            margin-top: 15px;
         }
 
         .btn-pull:hover {
@@ -288,7 +289,8 @@
                 <button type="submit" class="btn-pull">
                     LANJUT KE PANEL MINGGUAN <i class="fas fa-arrow-right" style="margin-left:8px;"></i>
                 </button>
-                <button type="button" class="btn-pull" onclick="submitNewReport()" style="background: linear-gradient(135deg, #6366f1 0%, var(--accent-blue) 100%);">
+
+                <button type="submit" formaction="tarik_data_mingguan.php" class="btn-pull" style="background: linear-gradient(135deg, #6366f1 0%, var(--accent-blue) 100%);">
                     LAPORAN MINGGUAN NEW <i class="fas fa-plus-circle" style="margin-left:8px;"></i>
                 </button>
             </div>
@@ -338,12 +340,6 @@
             requestAnimationFrame(loop);
         }
         loop();
-
-        function submitNewReport() {
-            const form = document.getElementById('card');
-            form.action = 'tarik_data_mingguan.php';
-            form.submit();
-        }
     </script>
 </body>
 

@@ -1,5 +1,5 @@
 <?php
-// Tidak ada logic PHP server-side yang berat
+// Pastikan file ini menerima data POST
 ?>
 
 <!DOCTYPE html>
@@ -7,7 +7,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Panel Mingguan - EDP</title>
+    <title>Panel Mingguan (Tanpa Pre-Process) - EDP</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -15,9 +15,7 @@
         :root {
             --bg-deep: #020617;
             --accent: #22d3ee;
-            /* Biru Cyan Utama */
             --accent-igr: #d946ef;
-            /* Ungu/Magenta untuk IGR */
             --glass: rgba(30, 41, 59, 0.75);
             --glass-item: rgba(255, 255, 255, 0.03);
             --border: rgba(34, 211, 238, 0.2);
@@ -25,7 +23,6 @@
             --btn-red: linear-gradient(135deg, #ef4444, #b91c1c);
             --btn-blue: linear-gradient(135deg, #3b82f6, #2563eb);
             --btn-purple: linear-gradient(135deg, #d946ef, #a21caf);
-            /* Button khusus IGR */
             --btn-login: linear-gradient(135deg, #f59e0b, #b45309);
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
@@ -46,7 +43,6 @@
             overflow-x: hidden;
         }
 
-        /* --- BACKGROUND --- */
         #bg-canvas {
             position: absolute;
             top: 0;
@@ -57,7 +53,6 @@
             pointer-events: none;
         }
 
-        /* --- CONTAINER --- */
         .container {
             width: 100%;
             max-width: 1000px;
@@ -65,29 +60,18 @@
             z-index: 1;
         }
 
-        .card {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 2.5rem;
+        .header-card {
+            text-align: center;
             margin-bottom: 30px;
-            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
         }
 
         h1 {
             margin: 0 0 10px 0;
             color: var(--accent);
-            text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 800;
             text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
-        }
-
-        .header-card {
-            text-align: center;
-            margin-bottom: 30px;
         }
 
         .login-box {
@@ -99,7 +83,6 @@
             margin-bottom: 20px;
         }
 
-        /* --- AUTO DOWNLOAD BOX --- */
         .auto-box {
             background: rgba(34, 211, 238, 0.05);
             border: 1px solid var(--border);
@@ -110,7 +93,7 @@
         }
 
         .btn-auto {
-            background: var(--btn-green);
+            background: var(--btn-blue);
             color: #fff;
             border: none;
             padding: 15px 30px;
@@ -120,7 +103,7 @@
             width: 100%;
             max-width: 450px;
             transition: 0.3s;
-            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
             font-family: 'JetBrains Mono';
             text-transform: uppercase;
             font-size: 1rem;
@@ -128,7 +111,7 @@
 
         .btn-auto:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.5);
         }
 
         .btn-auto:disabled {
@@ -180,7 +163,6 @@
             box-shadow: 0 10px 30px rgba(245, 158, 11, 0.5);
         }
 
-        /* LIST STYLES */
         .section-title {
             color: var(--accent);
             margin-bottom: 20px;
@@ -200,7 +182,6 @@
             margin-top: 0;
         }
 
-        /* WARNA KHUSUS IGR */
         .section-igr {
             color: var(--accent-igr);
             border-color: rgba(217, 70, 239, 0.3);
@@ -242,7 +223,6 @@
             transition: 0.3s;
         }
 
-        /* TYPE COLORS */
         .type-print::before {
             background: var(--accent);
         }
@@ -324,7 +304,6 @@
             line-height: 1.4;
         }
 
-        /* BUTTONS */
         .btn-action {
             text-decoration: none;
             padding: 12px;
@@ -374,7 +353,6 @@
             box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5);
         }
 
-        /* Button khusus IGR style default */
         .btn-dl-igr {
             background: var(--btn-purple);
             box-shadow: 0 4px 10px rgba(217, 70, 239, 0.3);
@@ -419,6 +397,10 @@
         $raw_ip = $_POST['ip_address'];
         $ip = preg_replace('#^https?://#', '', rtrim($raw_ip, '/'));
         $ip = explode('/', $ip)[0];
+
+        // MENGAMBIL DATA KODE CABANG
+        $kode_cabang = isset($_POST['kode_cabang']) ? strtoupper(trim($_POST['kode_cabang'])) : 'XX';
+
         $tgl_awal = $_POST['tgl_awal'];
         $tgl_akhir = $_POST['tgl_akhir'];
 
@@ -448,62 +430,36 @@
             ['name' => 'Register BPB dan NPB Per PLU', 'url' => "http://$ip/bo/cetak-register/print?register=BK&tgl1={$tgl1_slash}&tgl2={$tgl2_slash}", 'ext' => 'excel']
         ];
 
-        // --- KELOMPOK 3: IGR / OMI / TMI (BARU) ---
-        // type: excel, pdf, or print
+        // --- KELOMPOK 3: IGR / OMI / TMI ---
         $igr_links = [
-            [
-                'name' => 'Laporan Penjualan TMI (Excel)',
-                'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=excel&salesType=tmi&perType=hari",
-                'type' => 'excel'
-            ],
-            // INI YANG DITAMBAHKAN (KLI EXCEL)
-            [
-                'name' => 'Laporan Penjualan KLI (Excel)',
-                'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=excel&salesType=kli&perType=hari",
-                'type' => 'excel'
-            ],
-            [
-                'name' => 'Laporan Penjualan KLI (PDF)',
-                'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=pdf&salesType=kli&perType=hari",
-                'type' => 'pdf'
-            ],
-            [
-                'name' => 'Laporan Penjualan TMI (PDF)',
-                'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=pdf&salesType=tmi&perType=hari",
-                'type' => 'pdf'
-            ],
-            [
-                'name' => 'Rekapitulasi Register PPR (OMI)',
-                'url' => "http://$ip/omi/laporan/rekapitulasi-register-ppr/cetak?tgl1={$tgl1_slash}&tgl2={$tgl2_slash}&member1=&member2=&nodoc1=&nodoc2=&tipe=OMI",
-                'type' => 'print'
-            ],
-            [
-                'name' => 'Register PPR (OMI)',
-                'url' => "http://$ip/omi/laporan/register-ppr/cetak?tgl1={$tgl1_slash}&tgl2={$tgl2_slash}&nodoc1=&nodoc2=&tipe=OMI",
-                'type' => 'print'
-            ],
+            ['name' => 'Laporan Penjualan TMI (Excel)', 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=excel&salesType=tmi&perType=hari", 'type' => 'excel'],
+            ['name' => 'Laporan Penjualan KLI (Excel)', 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=excel&salesType=kli&perType=hari", 'type' => 'excel'],
+            ['name' => 'Laporan Penjualan KLI (PDF)', 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=pdf&salesType=kli&perType=hari", 'type' => 'pdf'],
+            ['name' => 'Laporan Penjualan TMI (PDF)', 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu7?date1={$tgl1_dash}&date2={$tgl2_dash}&export_type=pdf&salesType=tmi&perType=hari", 'type' => 'pdf'],
+            ['name' => 'Rekapitulasi Register PPR (OMI)', 'url' => "http://$ip/omi/laporan/rekapitulasi-register-ppr/cetak?tgl1={$tgl1_slash}&tgl2={$tgl2_slash}&member1=&member2=&nodoc1=&nodoc2=&tipe=OMI", 'type' => 'print'],
+            ['name' => 'Register PPR (OMI)', 'url' => "http://$ip/omi/laporan/register-ppr/cetak?tgl1={$tgl1_slash}&tgl2={$tgl2_slash}&nodoc1=&nodoc2=&tipe=OMI", 'type' => 'print'],
         ];
     ?>
 
         <div class="container">
             <div class="header-card">
-                <h1>WEEKLY REPORT</h1>
-                <p>Target IP: <span style="color:var(--accent)"><?= $ip ?></span> &bull; Periode: <?= $tgl_awal ?> s/d <?= $tgl_akhir ?></p>
+                <h1>WEEKLY REPORT (MODE TARIK DATA SAJA)</h1>
+                <p>Cabang: <span style="color:var(--accent)"><?= $kode_cabang ?></span> &bull; Target IP: <span style="color:var(--accent)"><?= $ip ?></span> &bull; Periode: <?= $tgl_awal ?> s/d <?= $tgl_akhir ?></p>
             </div>
 
             <div class="login-box">
-                <span class="step-label"><i class="fas fa-key"></i> LANGKAH 1: OTORISASI</span>
-                <p class="step-desc">Wajib login dulu agar browser memiliki akses ke data IAS.</p>
+                <span class="step-label"><i class="fas fa-key"></i> LANGKAH 1: OTORISASI MANUAL</span>
+                <p class="step-desc">Login manual jika hanya ingin menarik 1-2 data secara spesifik pakai tangan.</p>
                 <a href="http://<?= $ip ?>/login" target="_blank" class="btn-login">LOGIN IAS <i class="fas fa-external-link-alt"></i></a>
             </div>
 
-            <div class="auto-box">
-                <span class="step-label cyan"><i class="fas fa-robot"></i> LANGKAH 2: AUTOMATION</span>
-                <p class="step-desc">Tarik semua link di bawah secara otomatis (Mohon jangan tutup halaman saat proses berjalan).</p>
+            <div class="auto-box" style="border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.05);">
+                <span class="step-label" style="color: #3b82f6;"><i class="fas fa-robot"></i> LANGKAH 2: AUTOMATION (TARIK SAJA)</span>
+                <p class="step-desc">Bot akan melakuan <b>Double-Login</b> & menarik semua data di bawah otomatis ke dalam format ZIP, <br><b>TANPA melakukan proses Hitstok/LPP.</b></p>
                 <button id="btn-tarik-semua" class="btn-auto">
-                    <i class="fas fa-cloud-download-alt"></i> TARIK SEMUA DATA OTOMATIS
+                    <i class="fas fa-cloud-download-alt"></i> JALANKAN BOT TARIK OTOMATIS
                 </button>
-                <p id="status-download" style="margin-top: 15px; font-size: 0.85rem; color: var(--accent); display: none;"></p>
+                <p id="status-download" style="margin-top: 15px; font-size: 0.85rem; color: #3b82f6; display: none;"></p>
             </div>
 
             <div class="section-title">
@@ -554,7 +510,6 @@
 
             <div class="file-grid">
                 <?php foreach ($igr_links as $file):
-                    // Logic untuk styling per item di group IGR
                     if ($file['type'] == 'excel') {
                         $rowClass = 'type-excel dl-excel';
                         $iconClass = 'fa-file-excel';
@@ -566,7 +521,6 @@
                         $btnClass = 'btn-dl-pdf';
                         $label = 'Download PDF';
                     } else {
-                        // Default Print style but using purple accent hint
                         $rowClass = 'type-igr dl-igr';
                         $iconClass = 'fa-print';
                         $btnClass = 'btn-dl-igr';
@@ -598,18 +552,17 @@
                 }, 800);
             }
 
-            // --- SCRIPT BARU UNTUK MENGIRIM PERINTAH KE NODE.JS API ---
+            // --- SCRIPT API NODE.JS (VERSI TANPA PRE-PROCESS) ---
             document.getElementById('btn-tarik-semua').addEventListener('click', async function() {
                 const ipIAS = "<?= $ip ?>";
-                const tglAwal = "<?= $tgl_awal ?>";
-                const tglAkhir = "<?= $tgl_akhir ?>";
-                const userIAS = "<?= $_POST['username_ias'] ?? '' ?>";
-                const passIAS = "<?= $_POST['password_ias'] ?? '' ?>";
-                const koneksiIAS = "<?= $_POST['koneksi_ias'] ?? 'PRODUCTION' ?>";
-                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Otomatis' ?>";
+                const userIAS = <?= json_encode($_POST['username_ias'] ?? '') ?>;
+                const passIAS = <?= json_encode($_POST['password_ias'] ?? '') ?>;
+                const koneksiIAS = <?= json_encode($_POST['koneksi_ias'] ?? 'PRODUCTION') ?>;
+                const namaFolder = <?= json_encode($_POST['folder_name'] ?? 'Laporan_Otomatis') ?>;
 
                 const allLinks = [
                     <?php
+                    $no = 1;
                     $all_bot_links = [];
                     foreach ($print_links as $l) {
                         $all_bot_links[] = ['url' => $l['url'], 'type' => 'pdf', 'name' => $l['name']];
@@ -622,14 +575,16 @@
                         $type = ($l['type'] == 'excel') ? 'excel' : 'pdf';
                         $all_bot_links[] = ['url' => $l['url'], 'type' => $type, 'name' => $l['name']];
                     }
+
                     foreach ($all_bot_links as $b) {
-                        $safeName = addslashes($b['name']);
-                        echo "{ url: '" . $b['url'] . "', type: '" . $b['type'] . "', name: '" . $safeName . "' },\n";
+                        $botName = $no . '_' . $kode_cabang . ' ' . addslashes($b['name']);
+                        echo "{ url: '" . $b['url'] . "', type: '" . $b['type'] . "', name: '" . $botName . "' },\n";
+                        $no++;
                     }
                     ?>
                 ];
 
-                if (!confirm(`Bot akan login menggunakan koneksi ${koneksiIAS}, lalu menyimpan file ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+                if (!confirm(`Bot akan melakukan Double-Login (${koneksiIAS}), lalu menarik ${allLinks.length} Laporan TANPA PROSES HITSTOK. Lanjutkan?`)) return;
 
                 const btn = this;
                 const status = document.getElementById('status-download');
@@ -653,8 +608,11 @@
                             username: userIAS,
                             password: passIAS,
                             folderName: namaFolder,
-                            koneksi: koneksiIAS, // <--- Data Koneksi dikirim ke Node.js
-                            links: allLinks
+                            koneksi: koneksiIAS,
+                            links: allLinks,
+                            doPreProcess: false, // <--- PENTING: NO HITSTOK/LPP
+                            t1: "<?= $tgl1_slash ?>",
+                            t2: "<?= $tgl2_slash ?>"
                         })
                     });
 
@@ -662,7 +620,25 @@
 
                     if (response.ok) {
                         btn.innerHTML = '<i class="fas fa-check-circle"></i> PENARIKAN SELESAI!';
-                        status.innerHTML = result.message;
+
+                        const safeFileName = encodeURIComponent(result.downloadFile);
+                        const downloadUrl = `http://${serverIP}:3030/download-zip/${safeFileName}`;
+
+                        status.innerHTML = `<b>Sukses!</b> Paket Laporan ZIP siap.<br><br>
+                        <a href="${downloadUrl}" download style="color:#fff; background: linear-gradient(135deg, var(--btn-blue), #1d4ed8); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);">
+                            <i class="fas fa-download"></i> KLIK DI SINI JIKA DOWNLOAD TIDAK MUNCUL
+                        </a>`;
+
+                        if (result.downloadFile) {
+                            setTimeout(() => {
+                                const linkGaib = document.createElement('a');
+                                linkGaib.href = downloadUrl;
+                                linkGaib.download = result.downloadFile;
+                                document.body.appendChild(linkGaib);
+                                linkGaib.click();
+                                document.body.removeChild(linkGaib);
+                            }, 1000);
+                        }
                     } else {
                         throw new Error(result.error || 'Terjadi kesalahan pada bot');
                     }
@@ -675,11 +651,9 @@
 
                 setTimeout(() => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> TARIK SEMUA DATA OTOMATIS';
+                    btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> JALANKAN BOT TARIK OTOMATIS';
                 }, 8000);
             });
-            // --- AKHIR SCRIPT NODE.JS API ---
-            // --- AKHIR SCRIPT NODE.JS API ---
 
             // Particle System
             const canvas = document.getElementById('bg-canvas');
@@ -692,6 +666,7 @@
             }
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
+
             class Particle {
                 constructor() {
                     this.x = Math.random() * canvas.width;
