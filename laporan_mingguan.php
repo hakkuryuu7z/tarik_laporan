@@ -213,11 +213,20 @@
                 <span class="page-title">WEEKLY REPORT</span>
             </div>
 
-            <div class="input-group">
-                <label>Target IP Address</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-network-wired input-icon"></i>
-                    <input type="text" name="ip_address" placeholder="172.31.xxx.xxx" required autocomplete="off">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 1.5rem;">
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label>Target IP Address</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-network-wired input-icon"></i>
+                        <input type="text" name="ip_address" placeholder="172.31.xxx.xxx" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label>Kode Cabang</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-building input-icon"></i>
+                        <input type="text" name="kode_cabang" placeholder="Misal: 2P" required autocomplete="off" style="text-transform: uppercase;">
+                    </div>
                 </div>
             </div>
 
@@ -253,7 +262,7 @@
                     <label>Nama Folder Penyimpanan</label>
                     <div class="input-wrapper">
                         <i class="fas fa-folder-open input-icon"></i>
-                        <input type="text" name="folder_name" placeholder="Contoh: Laporan_MWS" required autocomplete="off">
+                        <input type="text" name="folder_name" placeholder="Contoh: Lap_Mingguan" required autocomplete="off">
                     </div>
                 </div>
             </div>
@@ -279,7 +288,6 @@
                 <button type="submit" class="btn-pull">
                     LANJUT KE PANEL MINGGUAN <i class="fas fa-arrow-right" style="margin-left:8px;"></i>
                 </button>
-
                 <button type="button" class="btn-pull" onclick="submitNewReport()" style="background: linear-gradient(135deg, #6366f1 0%, var(--accent-blue) 100%);">
                     LAPORAN MINGGUAN NEW <i class="fas fa-plus-circle" style="margin-left:8px;"></i>
                 </button>
@@ -331,11 +339,10 @@
         }
         loop();
 
-        // --- FUNGSI PINDAH KE HALAMAN NEW ---
         function submitNewReport() {
             const form = document.getElementById('card');
-            form.action = 'tarik_data_mingguan.php'; // Ubah target halaman
-            form.submit(); // Submit paksa lewat JS
+            form.action = 'tarik_data_mingguan.php';
+            form.submit();
         }
     </script>
 </body>

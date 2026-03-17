@@ -94,7 +94,6 @@
             transition: 0.3s;
         }
 
-        /* KOTAK AUTO BOT */
         .auto-box {
             background: rgba(34, 211, 238, 0.05);
             border: 1px solid var(--border);
@@ -241,10 +240,6 @@
             background: var(--btn-green);
         }
 
-        .btn-print {
-            background: var(--btn-blue);
-        }
-
         .btn-action.done {
             background: #334155 !important;
             color: #94a3b8;
@@ -264,7 +259,6 @@
             color: var(--accent);
         }
 
-        /* MODAL ALERT */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -381,6 +375,10 @@
         $raw_ip = $_POST['ip_address'];
         $ip = preg_replace('#^https?://#', '', rtrim($raw_ip, '/'));
         $ip = explode('/', $ip)[0];
+
+        // MENGAMBIL DATA KODE CABANG
+        $kode_cabang = isset($_POST['kode_cabang']) ? strtoupper(trim($_POST['kode_cabang'])) : 'XX';
+
         $tgl_awal = $_POST['tgl_awal'];
         $tgl_akhir = $_POST['tgl_akhir'];
 
@@ -389,30 +387,31 @@
         $t1_d = date('d-m-Y', strtotime($tgl_awal));
         $t2_d = date('d-m-Y', strtotime($tgl_akhir));
 
+        // MENGGANTI HARDCODE "2P" DENGAN VARIABEL $kode_cabang
         $groups = [
             "1. Register BPB" => [
-                ['name' => '1. 2P REGISTER BPB (BATAL)', 'url' => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'pdf'],
-                ['name' => '1. 2P REGISTER BPB PER HARI', 'url' => "http://$ip/bo/cetak-register/print?register=B1&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'excel'],
-                ['name' => '1. 2P REGISTER BPB', 'url' => "http://$ip/bo/cetak-register/print?register=B&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'excel'],
+                ['name' => "1_{$kode_cabang} REGISTER BPB (BATAL)", 'url' => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'pdf'],
+                ['name' => "1_{$kode_cabang} REGISTER BPB PER HARI", 'url' => "http://$ip/bo/cetak-register/print?register=B1&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'excel'],
+                ['name' => "1_{$kode_cabang} REGISTER BPB", 'url' => "http://$ip/bo/cetak-register/print?register=B&tgl1=$t1_s&tgl2=$t2_s&jenis=B", 'type' => 'excel'],
             ],
             "2. Register NPB" => [
-                ['name' => '2. 2P REGISTER NPB (BATAL)', 'url' => "http://$ip/bo/cetak-register/print?register=K2&tgl1=$t1_s&tgl2=$t2_s", 'type' => 'pdf'],
-                ['name' => '2. 2P REGISTER NPB PER HARI', 'url' => "http://$ip/bo/cetak-register/print?register=K1&tgl1=$t1_s&tgl2=$t2_s", 'type' => 'excel'],
-                ['name' => '2. 2P REGISTER NPB', 'url' => "http://$ip/bo/cetak-register/print-excel?register=K&tgl1=$t1_s&tgl2=$t2_s&ukuran=besar", 'type' => 'excel'],
+                ['name' => "2_{$kode_cabang} REGISTER NPB (BATAL)", 'url' => "http://$ip/bo/cetak-register/print?register=K2&tgl1=$t1_s&tgl2=$t2_s", 'type' => 'pdf'],
+                ['name' => "2_{$kode_cabang} REGISTER NPB PER HARI", 'url' => "http://$ip/bo/cetak-register/print?register=K1&tgl1=$t1_s&tgl2=$t2_s", 'type' => 'excel'],
+                ['name' => "2_{$kode_cabang} REGISTER NPB", 'url' => "http://$ip/bo/cetak-register/print-excel?register=K&tgl1=$t1_s&tgl2=$t2_s&ukuran=besar", 'type' => 'excel'],
             ],
             "3. Penjualan & Voucher" => [
-                ['name' => '3. 2P LPT PERHARI', 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu4?date1=$t1_d&date2=$t2_d&export_type=excel&ekspor=T&lst_print=INDOGROSIR", 'type' => 'excel'],
-                ['name' => '4. 2P LAPORAN SALES VOUCHER', 'url' => "http://$ip/fo/laporan-kasir/transaksivoucher/print?date1=$t1_d&date2=$t2_d", 'type' => 'pdf'],
-                ['name' => '5. 2P POTONGAN EVENT PROMOSI', 'url' => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$t1_d&dateB=$t2_d&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi", 'type' => 'pdf'],
+                ['name' => "3_{$kode_cabang} LPT PERHARI", 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu4?date1=$t1_d&date2=$t2_d&export_type=excel&ekspor=T&lst_print=INDOGROSIR", 'type' => 'excel'],
+                ['name' => "4_{$kode_cabang} LAPORAN SALES VOUCHER", 'url' => "http://$ip/fo/laporan-kasir/transaksivoucher/print?date1=$t1_d&date2=$t2_d", 'type' => 'pdf'],
+                ['name' => "5_{$kode_cabang} POTONGAN EVENT PROMOSI", 'url' => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$t1_d&dateB=$t2_d&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi", 'type' => 'pdf'],
             ],
             "4. Laporan LPP" => [
-                ['name' => '6. 2P LPP BAIK', 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
-                ['name' => '7. 2P LPP RETUR', 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP08&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
-                ['name' => '8. 2P LPP RUSAK', 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP11&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
+                ['name' => "6_{$kode_cabang} LPP BAIK", 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
+                ['name' => "7_{$kode_cabang} LPP RETUR", 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP08&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
+                ['name' => "8_{$kode_cabang} LPP RUSAK", 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP11&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
             ],
             "5. Surat Jalan & TAC" => [
-                ['name' => '9. 2P REGISTER SURAT JALAN', 'url' => "http://$ip/bo/cetak-register/print?register=O&tgl1=$t1_s&tgl2=$t2_s&cabang=ALL", 'type' => 'pdf'],
-                ['name' => '10. 2P REGISTER TAC', 'url' => "http://$ip/bo/cetak-register/print?register=I&tgl1=$t1_s&tgl2=$t2_s&cabang=ALL", 'type' => 'pdf'],
+                ['name' => "9_{$kode_cabang} REGISTER SURAT JALAN", 'url' => "http://$ip/bo/cetak-register/print?register=O&tgl1=$t1_s&tgl2=$t2_s&cabang=ALL", 'type' => 'pdf'],
+                ['name' => "10_{$kode_cabang} REGISTER TAC", 'url' => "http://$ip/bo/cetak-register/print?register=I&tgl1=$t1_s&tgl2=$t2_s&cabang=ALL", 'type' => 'pdf'],
             ]
         ];
     ?>
@@ -420,7 +419,7 @@
         <div class="container">
             <div class="header-card">
                 <h1>WEEKLY REPORT NEW</h1>
-                <p style="font-size: 0.9rem; color: var(--text-dim);">IP: <span style="color:var(--accent)"><?= $ip ?></span> | Periode: <?= $t1_d ?> s/d <?= $t2_d ?></p>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">Cabang: <span style="color:var(--accent)"><?= $kode_cabang ?></span> | IP: <span style="color:var(--accent)"><?= $ip ?></span> | Periode: <?= $t1_d ?> s/d <?= $t2_d ?></p>
             </div>
 
             <div class="login-box">
@@ -430,7 +429,7 @@
 
             <div class="auto-box">
                 <span class="step-label"><i class="fas fa-robot"></i> LANGKAH 2: AUTOMATION HITSTOK + LPP + DOWNLOAD</span>
-                <p class="step-desc">Bot akan melakukan Hitstok, LPP, lalu mendownload semua file di bawah secara otomatis.</p>
+                <p class="step-desc">Bot akan melakukan Hitstok, LPP, dan zip file dengan prefix Cabang <?= $kode_cabang ?>.</p>
                 <button id="btn-tarik-semua" class="btn-auto">
                     <i class="fas fa-cloud-download-alt"></i> JALANKAN BOT OTOMATIS
                 </button>
@@ -483,19 +482,15 @@
                 }, 1000);
             }
 
-            // SCRIPT API NODE.JS DENGAN INSTRUKSI PRE-PROCESS
+            // SCRIPT API NODE.JS DENGAN ZIP FALLBACK
             document.getElementById('btn-tarik-semua').addEventListener('click', async function() {
                 const ipIAS = "<?= $ip ?>";
-                const tglAwal = "<?= $tgl_awal ?>";
-                const tglAkhir = "<?= $tgl_akhir ?>";
-                // Tanggal format slash (dd/mm/yyyy) untuk dikirim ke bot agar diisi di form LPP
                 const tglAwalSlash = "<?= $t1_s ?>";
                 const tglAkhirSlash = "<?= $t2_s ?>";
-
                 const userIAS = "<?= $_POST['username_ias'] ?? '' ?>";
                 const passIAS = "<?= $_POST['password_ias'] ?? '' ?>";
                 const koneksiIAS = "<?= $_POST['koneksi_ias'] ?? 'PRODUCTION' ?>";
-                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Otomatis' ?>";
+                const namaFolder = "<?= $_POST['folder_name'] ?? 'Laporan_Mingguan_Otomatis' ?>";
 
                 const allLinks = [
                     <?php
@@ -508,7 +503,7 @@
                     ?>
                 ];
 
-                if (!confirm(`Bot akan melakukan HITSTOK & LPP, lalu menyimpan ${allLinks.length} file ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+                if (!confirm(`Bot akan melakukan HITSTOK & LPP, lalu menyimpan file dengan format Cabang <?= $kode_cabang ?> ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
 
                 const btn = this;
                 const status = document.getElementById('status-download');
@@ -516,7 +511,7 @@
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BOT SEDANG BEKERJA...';
                 status.style.display = 'block';
-                status.innerHTML = 'Bot sedang login dan memproses HITSTOK & LPP. Tolong jangan sentuh mouse/keyboard.';
+                status.innerHTML = 'Bot sedang login dan memproses HITSTOK & LPP. Tolong tunggu sebentar...';
 
                 try {
                     const serverIP = window.location.hostname;
@@ -534,7 +529,6 @@
                             folderName: namaFolder,
                             koneksi: koneksiIAS,
                             links: allLinks,
-                            // KASIH TAU BOT UNTUK NGERJAIN HITSTOK & LPP
                             doPreProcess: true,
                             t1: tglAwalSlash,
                             t2: tglAkhirSlash
@@ -545,7 +539,19 @@
 
                     if (response.ok) {
                         btn.innerHTML = '<i class="fas fa-check-circle"></i> SEMUA PROSES SELESAI!';
-                        status.innerHTML = result.message;
+
+                        const downloadUrl = `http://${serverIP}:3030/download-zip/${result.downloadFile}`;
+
+                        status.innerHTML = `<b>Sukses!</b> Paket Laporan ZIP siap.<br><br>
+                        <a href="${downloadUrl}" style="color:#fff; background: linear-gradient(135deg, var(--btn-green), #15803d); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px; box-shadow: 0 5px 15px rgba(34,197,94,0.4);">
+                            <i class="fas fa-download"></i> KLIK DI SINI JIKA DOWNLOAD TIDAK MUNCUL
+                        </a>`;
+
+                        if (result.downloadFile) {
+                            setTimeout(() => {
+                                window.location.href = downloadUrl;
+                            }, 1000);
+                        }
                     } else {
                         throw new Error(result.error || 'Terjadi kesalahan pada bot');
                     }
