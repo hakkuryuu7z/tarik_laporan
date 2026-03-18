@@ -30,15 +30,16 @@ app.post('/api/tarik', async (req, res) => {
     console.log(`\n=== MEMULAI AUTO-BOT ===`);
     console.log(`Target : ${ip} | Koneksi: ${koneksi}`);
     
-    const safeFolderName = folderName.replace(/[^a-zA-Z0-9-_ \(\)]/g, '_');
+    const uniqueId = Date.now();
+    const safeFolderName = folderName.replace(/[^a-zA-Z0-9-_ \(\)]/g, '_') + '_' + uniqueId;
     const targetFolder = path.join(os.homedir(), 'Downloads', safeFolderName);
     if (!fs.existsSync(targetFolder)) fs.mkdirSync(targetFolder, { recursive: true });
 
     let browser;
     try {
         browser = await puppeteer.launch({ 
-            headless: true, // <--- UDAH JADI SILUMAN LAGI BIAR ENTENG! 👻
-            defaultViewport: null,
+            headless: true, // PANTAU TERUS WAK!
+            defaultViewport: { width: 1366, height: 768 }, 
             args: ['--start-maximized']
         });
         const page = await browser.newPage();
@@ -67,8 +68,10 @@ app.post('/api/tarik', async (req, res) => {
                 });
             }, kon);
 
-            await page.type('input[type="text"]', u, { delay: 30 });
-            await page.type('input[type="password"]', p, { delay: 30 });
+            await page.type('input[type="text"]', u, { delay: 50 });
+            await page.type('input[type="password"]', p, { delay: 50 });
+            
+            await page.keyboard.press('Enter');
             
             await page.evaluate(() => {
                 const btns = Array.from(document.querySelectorAll('button, a, input[type="submit"]'));
@@ -101,13 +104,14 @@ app.post('/api/tarik', async (req, res) => {
             }
             
             if (isPemancing) {
-                console.log(`   [INFO] Tugas rst selesai, balik ke halaman login awal...`);
+                console.log(`   [INFO] Tugas rst selesai, Logout dan balik ke login awal...`);
+                try { await page.goto(`http://${ip}/logout`, { waitUntil: 'networkidle2', timeout: 10000 }); } catch(e){}
                 await page.goto(`http://${ip}/login`, { waitUntil: 'networkidle2' });
                 return; 
             }
 
             let isSuccess = false;
-            for (let detik = 1; detik <= 10; detik++) {
+            for (let detik = 1; detik <= 20; detik++) {
                 await new Promise(r => setTimeout(r, 1000)); 
                 const isPasswordBoxGone = await page.evaluate(() => {
                     const passBox = document.querySelector('input[type="password"]');
@@ -115,13 +119,15 @@ app.post('/api/tarik', async (req, res) => {
                 });
                 if (isPasswordBoxGone) {
                     isSuccess = true;
-                    console.log(`   [INFO] Dashboard terbaca! Berhasil masuk. ⚡`);
+                    console.log(`   [INFO] Dashboard terbaca! Berhasil masuk dalam ${detik} detik. ⚡`);
                     break; 
                 }
             }
 
             if (!isSuccess) {
-                throw new Error(`Login Gagal (User: ${u}). Cek kembali Password atau koneksinya!`); 
+                const pathFoto = path.join(__dirname, `BUKTI_ERROR_LOGIN_${u}.png`);
+                await page.screenshot({ path: pathFoto, fullPage: true });
+                throw new Error(`Login Gagal (User: ${u}). Cek gambar BUKTI_ERROR_LOGIN_${u}.png di folder server!`); 
             }
         }
 
@@ -137,31 +143,129 @@ app.post('/api/tarik', async (req, res) => {
 
         if (doPreProcess) {
             console.log(`\n=== MENJALANKAN TUGAS PRASYARAT ===`);
+            
             console.log(`-> [HITSTOK] Membuka menu Hitung Ulang Stock...`);
             try {
                 await page.goto(`http://${ip}/bo/proses/hitungulangstock`, { waitUntil: 'networkidle2' });
+                
                 await page.evaluate(() => {
                     const btns = Array.from(document.querySelectorAll('button, a'));
                     const hitBtn = btns.find(b => b.innerText.toUpperCase().includes('PROSES HITUNG ULANG STOCK'));
                     if(hitBtn) hitBtn.click();
                 });
-                console.log(`   [HITSTOK] Diproses. Menunggu server merespon...`);
-                await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {});
-            } catch(e) { console.log(`   [WARNING] Hitstok:`, e.message); }
+                
+                console.log(`   [HITSTOK] Loading tabel status. Menunggu tombol "Proses Ulang" muncul...`);
+                
+                let prosesUlangDiklik = false;
+                for (let j = 1; j <= 90; j++) {
+                    await new Promise(r => setTimeout(r, 1000)); 
+                    
+                    prosesUlangDiklik = await page.evaluate(() => {
+                        const btns = Array.from(document.querySelectorAll('button'));
+                        const btnUlang = btns.find(b => b.innerText.trim().toUpperCase() === 'PROSES ULANG');
+                        if (btnUlang && btnUlang.offsetParent !== null) {
+                            btnUlang.click(); 
+                            return true;
+                        }
+                        return false;
+                    });
 
+                    if (prosesUlangDiklik) {
+                        console.log(`   [HITSTOK] Sukses! Tombol 'Proses Ulang' ditekan di detik ke-${j}. ⚡`);
+                        await new Promise(r => setTimeout(r, 5000)); 
+                        break; 
+                    }
+                }
+            } catch(e) { console.log(`   [WARNING] Error saat Hitstok:`, e.message); }
+
+            // ====================================================
+            // UPDATE NUKLIR: LPP MODE SNIPER & KETIK MANUAL
+            // ====================================================
             console.log(`-> [LPP] Membuka menu Proses LPP...`);
             try {
                 await page.goto(`http://${ip}/bo/lpp/proses-lpp`, { waitUntil: 'networkidle2' });
-                await page.evaluate((date1, date2) => {
-                    const inputs = document.querySelectorAll('input[type="text"], input[type="date"]');
-                    if(inputs.length >= 2) { inputs[0].value = date1; inputs[1].value = date2; }
-                    const btns = Array.from(document.querySelectorAll('button, a'));
-                    const lppBtn = btns.find(b => b.innerText.toUpperCase() === 'PROSES');
-                    if(lppBtn) lppBtn.click();
-                }, t1, t2);
-                console.log(`   [LPP] Diproses. Menunggu server merespon...`);
-                await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {});
-            } catch(e) { console.log(`   [WARNING] LPP:`, e.message); }
+                await new Promise(r => setTimeout(r, 1500)); 
+                
+                // 1. KETIK TANGGAL MANUAL KAYAK MANUSIA BENERAN
+                const inputDates = await page.$$('input[type="text"], input[type="date"]');
+                if (inputDates.length >= 2) {
+                    console.log(`   [LPP] Mengetik tanggal t1...`);
+                    await inputDates[0].click({ clickCount: 3 }); // Blok semua teks yang ada
+                    await page.keyboard.press('Backspace'); // Hapus
+                    await inputDates[0].type(t1, { delay: 100 }); // Ketik 1 per 1 lambat
+
+                    console.log(`   [LPP] Mengetik tanggal t2...`);
+                    await inputDates[1].click({ clickCount: 3 }); 
+                    await page.keyboard.press('Backspace'); 
+                    await inputDates[1].type(t2, { delay: 100 }); 
+                }
+                
+                await new Promise(r => setTimeout(r, 1000)); // Jeda biar webnya mikir
+                
+                // 2. JURUS SNIPER KOORDINAT MOUSE (KLIK FISIK!)
+                const semuaElemen = await page.$$('button, a, div, span, input'); // Cari di SEMUA TAG
+                let tombolLppDiklik = false;
+                
+                for (let el of semuaElemen) {
+                    let text = await page.evaluate(x => (x.innerText || x.value || x.textContent || '').trim().toUpperCase(), el);
+                    
+                    // Kalau ketemu kotak yang tulisannya persis 'PROSES'
+                    if (text === 'PROSES') {
+                        await el.evaluate(b => b.scrollIntoView()); // Scroll biar nongol di layar
+                        await new Promise(r => setTimeout(r, 500));
+                        
+                        const box = await el.boundingBox(); // Cari tau koordinat Piksel X & Y nya
+                        if (box) {
+                            // Arahin mouse beneran ke tengah-tengah kotak tombol itu
+                            await page.mouse.move(box.x + (box.width / 2), box.y + (box.height / 2));
+                            await page.mouse.down(); // Tahan klik kiri
+                            await new Promise(r => setTimeout(r, 150));
+                            await page.mouse.up();   // Lepas klik kiri
+                            
+                            tombolLppDiklik = true;
+                            console.log(`   [LPP] 🎯 Tombol ditekan pakai Sniper Mouse Pixel!`);
+                            break;
+                        }
+                    }
+                }
+                
+                // Kalau somehow sniper gagal, sikat pakai JS paksa
+                if (!tombolLppDiklik) {
+                    await page.evaluate(() => {
+                        let all = document.querySelectorAll('*');
+                        for(let a of all){
+                            if((a.innerText || '').trim().toUpperCase() === 'PROSES'){
+                                a.click();
+                            }
+                        }
+                    });
+                    console.log(`   [LPP] Tombol ditekan pakai mode bypass darurat!`);
+                }
+                
+                console.log(`   [LPP] Menunggu indikator loading/ceklist selesai...`);
+                
+                // 3. Smart Wait (Tunggu spinner)
+                let lppSelesai = false;
+                for (let k = 1; k <= 90; k++) {
+                    await new Promise(r => setTimeout(r, 1000)); 
+                    
+                    lppSelesai = await page.evaluate((waktuTunggu) => {
+                        const isLoading = document.querySelector('.fa-spin, .spinner, .loading, img[src*="load"], img[src*="spin"]');
+                        const isChecklist = document.querySelector('.fa-check, .text-success, .text-green, svg[class*="check"]');
+                        
+                        if (isChecklist) return true;
+                        if (!isLoading && waktuTunggu > 3) return true; 
+                        
+                        return false;
+                    }, k);
+
+                    if (lppSelesai) {
+                        console.log(`   [LPP] Sukses! Proses LPP selesai di detik ke-${k}. ⚡`);
+                        await new Promise(r => setTimeout(r, 3000)); 
+                        break;
+                    }
+                }
+            } catch(e) { console.log(`   [WARNING] Error saat LPP:`, e.message); }
             console.log(`=== PRASYARAT SELESAI ===\n`);
         }
 
@@ -244,14 +348,11 @@ app.post('/api/tarik', async (req, res) => {
             }
         }
         
-        // ====================================================
-        // JURUS CUCI TANGAN (LOGOUT) SETELAH BERES
-        // ====================================================
         console.log(`\n=== MEMBERSIHKAN JEJAK (LOGOUT) ===`);
         try {
             await page.goto(`http://${ip}/logout`, { waitUntil: 'networkidle2', timeout: 15000 });
             console.log(`   [INFO] Berhasil Logout dari sistem IAS! 🚪🚶‍♂️`);
-            await new Promise(r => setTimeout(r, 2000)); // Kasih napas sebelum diclose
+            await new Promise(r => setTimeout(r, 2000)); 
         } catch (err) {
             console.log(`   [WARNING] Abaikan jika gagal logout: ${err.message}`);
         }
@@ -298,5 +399,5 @@ app.post('/api/tarik', async (req, res) => {
 
 const PORT = 3030;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[🚀] API MEGA BOT (AUTO LOGOUT & SILUMAN) STANDBY DI PORT ${PORT}`);
+    console.log(`[🚀] API MEGA BOT (LPP SNIPER MODE) STANDBY DI PORT ${PORT}`);
 });
