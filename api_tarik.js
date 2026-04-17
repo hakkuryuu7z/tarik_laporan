@@ -79,28 +79,62 @@ app.post('/api/tarik', async (req, res) => {
                 if (loginBtn) loginBtn.click();
             });
             
-            console.log(`   [INFO] Menunggu pop-up IAS (User: ${u})...`);
-            let diklik = false;
+            console.log(`   [INFO] Mengecek pop-up IAS (User: ${u})...`);
+            let popupDitemukan = false;
+            let pesanErrorLogin = "";
+
             for (let i = 1; i <= 8; i++) {
                 await new Promise(r => setTimeout(r, 1000));
                 try {
-                    diklik = await page.evaluate(() => {
+                    const hasilPopup = await page.evaluate(() => {
+                        // Cari tombol OK
                         let btnOk = document.querySelector('.swal-button--confirm, .swal2-confirm, .swal2-styled');
                         if (!btnOk) {
                             const btns = Array.from(document.querySelectorAll('button'));
                             btnOk = btns.find(b => b.textContent && b.textContent.trim().toUpperCase() === 'OK');
                         }
+
                         if (btnOk && btnOk.offsetParent !== null) {
-                            btnOk.click(); return true;
+                            // BACA ISI POPUP SEBELUM DI-KLIK
+                            let titleEl = document.querySelector('.swal-title, .swal2-title');
+                            let textEl = document.querySelector('.swal-text, .swal2-html-container, .swal2-content');
+
+                            let titleText = titleEl ? titleEl.innerText.trim() : "";
+                            let bodyText = textEl ? textEl.innerText.trim() : "";
+                            let fullText = `${titleText} - ${bodyText}`;
+
+                            btnOk.click(); // Eksekusi klik
+                            return { diklik: true, isiPesan: fullText };
                         }
-                        return false;
+                        return { diklik: false, isiPesan: "" };
                     });
-                    if (diklik) {
-                        console.log(`   [INFO] Tombol OK ungu berhasil di-klik untuk user ${u}!`);
+
+                    if (hasilPopup.diklik) {
+                        console.log(`   [INFO] Popup terdeteksi: ${hasilPopup.isiPesan}`);
+                        let pesanUpper = hasilPopup.isiPesan.toUpperCase();
+
+                        // Validasi apakah isi popup adalah penolakan login
+                        if (
+                            pesanUpper.includes('TIDAK DITEMUKAN') || 
+                            pesanUpper.includes('SALAH') || 
+                            pesanUpper.includes('BELUM TERDAFTAR')
+                        ) {
+                            pesanErrorLogin = hasilPopup.isiPesan;
+                        }
+
+                        popupDitemukan = true;
                         await new Promise(r => setTimeout(r, 1500)); 
                         break; 
                     }
                 } catch (err) { }
+            }
+
+            // [EKSEKUSI ERROR] Jika dapat pesan penolakan dan ini bukan user pemancing (rst)
+            if (pesanErrorLogin !== "" && !isPemancing) {
+                const pathFoto = path.join(__dirname, `BUKTI_ERROR_LOGIN_${u}.png`);
+                await page.screenshot({ path: pathFoto, fullPage: true });
+                // Langsung lempar error spesifik ke frontend
+                throw new Error(`${pesanErrorLogin}. Cek gambar BUKTI_ERROR_LOGIN_${u}.png di folder server!`); 
             }
             
             if (isPemancing) {
