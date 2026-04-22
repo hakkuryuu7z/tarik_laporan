@@ -331,6 +331,22 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="input-group">
+                    <label>Kode Supplier ICC</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-boxes input-icon"></i>
+                        <input type="text" name="kode_supplier" placeholder="Contoh: SUP001" autocomplete="off">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Kode Cabang</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-store input-icon"></i>
+                        <input type="text" name="kode_cabang" placeholder="Contoh: BDG 2P" required autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
                     <label>Pilih Bulan (Start)</label>
                     <div class="input-wrapper">
                         <i class="far fa-calendar-alt input-icon"></i>

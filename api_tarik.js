@@ -27,6 +27,16 @@ app.post('/api/tarik', async (req, res) => {
     if (!folderName || folderName.trim() === '') folderName = 'Laporan_Otomatis';
     if (!koneksi) koneksi = 'PRODUCTION';
 
+    // ====================================================
+    // VALIDASI KODE SUPPLIER KOSONG
+    // ====================================================
+    const cekSupplierKosong = links.find(l => l.name.toUpperCase().includes('SUPPLIER') && l.url.includes('sup1=&'));
+    if (cekSupplierKosong) {
+        return res.status(400).json({ 
+            error: 'KODE SUPPLIER KOSONG! Silakan kembali ke halaman sebelumnya dan isi Kode Supplier untuk menarik Laporan Rincian Pembelian.' 
+        });
+    }
+
     console.log(`\n=== MEMULAI AUTO-BOT ===`);
     console.log(`Target : ${ip} | Koneksi: ${koneksi}`);
     
@@ -38,7 +48,7 @@ app.post('/api/tarik', async (req, res) => {
     let browser;
     try {
         browser = await puppeteer.launch({ 
-            headless: true, // PANTAU TERUS WAK!
+            headless: false, // PANTAU TERUS WAK!
             defaultViewport: { width: 1366, height: 768 }, 
             args: ['--start-maximized']
         });
@@ -87,7 +97,6 @@ app.post('/api/tarik', async (req, res) => {
                 await new Promise(r => setTimeout(r, 1000));
                 try {
                     const hasilPopup = await page.evaluate(() => {
-                        // Cari tombol OK
                         let btnOk = document.querySelector('.swal-button--confirm, .swal2-confirm, .swal2-styled');
                         if (!btnOk) {
                             const btns = Array.from(document.querySelectorAll('button'));
@@ -95,7 +104,6 @@ app.post('/api/tarik', async (req, res) => {
                         }
 
                         if (btnOk && btnOk.offsetParent !== null) {
-                            // BACA ISI POPUP SEBELUM DI-KLIK
                             let titleEl = document.querySelector('.swal-title, .swal2-title');
                             let textEl = document.querySelector('.swal-text, .swal2-html-container, .swal2-content');
 
@@ -103,7 +111,7 @@ app.post('/api/tarik', async (req, res) => {
                             let bodyText = textEl ? textEl.innerText.trim() : "";
                             let fullText = `${titleText} - ${bodyText}`;
 
-                            btnOk.click(); // Eksekusi klik
+                            btnOk.click(); 
                             return { diklik: true, isiPesan: fullText };
                         }
                         return { diklik: false, isiPesan: "" };
@@ -113,7 +121,6 @@ app.post('/api/tarik', async (req, res) => {
                         console.log(`   [INFO] Popup terdeteksi: ${hasilPopup.isiPesan}`);
                         let pesanUpper = hasilPopup.isiPesan.toUpperCase();
 
-                        // Validasi apakah isi popup adalah penolakan login
                         if (
                             pesanUpper.includes('TIDAK DITEMUKAN') || 
                             pesanUpper.includes('SALAH') || 
@@ -129,11 +136,9 @@ app.post('/api/tarik', async (req, res) => {
                 } catch (err) { }
             }
 
-            // [EKSEKUSI ERROR] Jika dapat pesan penolakan dan ini bukan user pemancing (rst)
             if (pesanErrorLogin !== "" && !isPemancing) {
                 const pathFoto = path.join(__dirname, `BUKTI_ERROR_LOGIN_${u}.png`);
                 await page.screenshot({ path: pathFoto, fullPage: true });
-                // Langsung lempar error spesifik ke frontend
                 throw new Error(`${pesanErrorLogin}. Cek gambar BUKTI_ERROR_LOGIN_${u}.png di folder server!`); 
             }
             
@@ -212,21 +217,17 @@ app.post('/api/tarik', async (req, res) => {
                 }
             } catch(e) { console.log(`   [WARNING] Error saat Hitstok:`, e.message); }
 
-            // ====================================================
-            // UPDATE NUKLIR: LPP MODE SNIPER & KETIK MANUAL
-            // ====================================================
             console.log(`-> [LPP] Membuka menu Proses LPP...`);
             try {
                 await page.goto(`http://${ip}/bo/lpp/proses-lpp`, { waitUntil: 'networkidle2' });
                 await new Promise(r => setTimeout(r, 1500)); 
                 
-                // 1. KETIK TANGGAL MANUAL KAYAK MANUSIA BENERAN
                 const inputDates = await page.$$('input[type="text"], input[type="date"]');
                 if (inputDates.length >= 2) {
                     console.log(`   [LPP] Mengetik tanggal t1...`);
-                    await inputDates[0].click({ clickCount: 3 }); // Blok semua teks yang ada
-                    await page.keyboard.press('Backspace'); // Hapus
-                    await inputDates[0].type(t1, { delay: 100 }); // Ketik 1 per 1 lambat
+                    await inputDates[0].click({ clickCount: 3 }); 
+                    await page.keyboard.press('Backspace'); 
+                    await inputDates[0].type(t1, { delay: 100 }); 
 
                     console.log(`   [LPP] Mengetik tanggal t2...`);
                     await inputDates[1].click({ clickCount: 3 }); 
@@ -234,27 +235,24 @@ app.post('/api/tarik', async (req, res) => {
                     await inputDates[1].type(t2, { delay: 100 }); 
                 }
                 
-                await new Promise(r => setTimeout(r, 1000)); // Jeda biar webnya mikir
+                await new Promise(r => setTimeout(r, 1000)); 
                 
-                // 2. JURUS SNIPER KOORDINAT MOUSE (KLIK FISIK!)
-                const semuaElemen = await page.$$('button, a, div, span, input'); // Cari di SEMUA TAG
+                const semuaElemen = await page.$$('button, a, div, span, input'); 
                 let tombolLppDiklik = false;
                 
                 for (let el of semuaElemen) {
                     let text = await page.evaluate(x => (x.innerText || x.value || x.textContent || '').trim().toUpperCase(), el);
                     
-                    // Kalau ketemu kotak yang tulisannya persis 'PROSES'
                     if (text === 'PROSES') {
-                        await el.evaluate(b => b.scrollIntoView()); // Scroll biar nongol di layar
+                        await el.evaluate(b => b.scrollIntoView()); 
                         await new Promise(r => setTimeout(r, 500));
                         
-                        const box = await el.boundingBox(); // Cari tau koordinat Piksel X & Y nya
+                        const box = await el.boundingBox(); 
                         if (box) {
-                            // Arahin mouse beneran ke tengah-tengah kotak tombol itu
                             await page.mouse.move(box.x + (box.width / 2), box.y + (box.height / 2));
-                            await page.mouse.down(); // Tahan klik kiri
+                            await page.mouse.down(); 
                             await new Promise(r => setTimeout(r, 150));
-                            await page.mouse.up();   // Lepas klik kiri
+                            await page.mouse.up();   
                             
                             tombolLppDiklik = true;
                             console.log(`   [LPP] 🎯 Tombol ditekan pakai Sniper Mouse Pixel!`);
@@ -263,7 +261,6 @@ app.post('/api/tarik', async (req, res) => {
                     }
                 }
                 
-                // Kalau somehow sniper gagal, sikat pakai JS paksa
                 if (!tombolLppDiklik) {
                     await page.evaluate(() => {
                         let all = document.querySelectorAll('*');
@@ -278,7 +275,6 @@ app.post('/api/tarik', async (req, res) => {
                 
                 console.log(`   [LPP] Menunggu indikator loading/ceklist selesai...`);
                 
-                // 3. Smart Wait (Tunggu spinner)
                 let lppSelesai = false;
                 for (let k = 1; k <= 90; k++) {
                     await new Promise(r => setTimeout(r, 1000)); 

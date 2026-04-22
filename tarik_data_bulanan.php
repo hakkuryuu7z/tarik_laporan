@@ -334,55 +334,73 @@
         $raw_ip = $_POST['ip_address'];
         $ip = preg_replace('#^https?://#', '', rtrim($raw_ip, '/'));
         $ip = explode('/', $ip)[0];
+
         $tgl_awal = $_POST['tgl_awal'];
         $tgl_akhir = $_POST['tgl_akhir'];
+        $kc = $_POST['kode_cabang'] ?? '1A'; // Kode Cabang
+        $ks = $_POST['kode_supplier'] ?? ''; // Kode Supplier
 
         $date1 = date('d-m-Y', strtotime($tgl_awal));
         $date2 = date('d-m-Y', strtotime($tgl_akhir));
         $periode1 = date('d/m/Y', strtotime($tgl_awal));
         $periode2 = date('d/m/Y', strtotime($tgl_akhir));
+        $tgl_file = date('dmY', strtotime($tgl_akhir)); // Format untuk nama file (contoh: 31032026)
+        $tgl_range_file = date('d_m_Y', strtotime($tgl_awal)) . " - " . date('d_m_Y', strtotime($tgl_akhir));
 
-        // DATA PRINT (Ungu)
+        // Data format HHmmss untuk simulasi nama file persis Excel
+        $jam_simulasi = date('His');
+
+        // DATA PRINT (PDF) - Format Menyesuaikan Referensi Excel
         $menu_urls = [
-            "Laporan Status Member Aktif" => "http://$ip/fo/laporan-kasir/rekap-member-status-kartu-aktif/cetak?periode=$date2",
-            "Laporan Transaksi Kartu Kredit" => "http://$ip/fo/laporan-kasir/kartu-kredit/per-nama/cetak?tgl1=$date1&tgl2=$date2",
-            "LPT PERHARI" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu4?date1=$date1&date2=$date2&export_type=pdf&ekspor=T&lst_print=INDOGROSIR",
-            "LPT ALL(IGR+OMI)" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu2?date1=$date1&date2=$date2&grosira=T&export=T&export_type=pdf&lst_print=INDOGROSIR%20ALL%20[IGR%20+%20(OMI/IDM)]",
-            "LPT PER DEPARTEMENT IGR" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu2?date1=$date1&date2=$date2&grosira=F&export=T&export_type=pdf&lst_print=INDOGROSIR",
-            "LAPORAN TRANSAKSI SALES VOUCHER" => "http://$ip/fo/laporan-kasir/transaksivoucher/print?date1=$date1&date2=$date2",
-            "RINCIAN PENGGUNAAN REWARD POIN" => "http://$ip/fo/point-reward-member-merah/penggunaan-point-reward-per-tanggal/cetak?tgl1=$periode1&tgl2=$periode2",
-            "LPP BARANG BAIK" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "LPP REKAP ADJUSTMENT STOCK OPNAME" => "http://$ip/bo/lpp/register-lpp/cetak-bagian-2?menu=LPP01&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "LPP BARANG RETUR" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP08&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "LPP BARANG RUSAK" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP10&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "REGISTER BUKTI PEMBATALAN PENERIMAAN" => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$periode1&tgl2=$periode2&jenis=B",
-            "REGISTER NOTA PENGELUARAN BARANG" => "http://$ip/bo/cetak-register/print?register=K&tgl1=$periode1&tgl2=$periode2&ukuran=kecil",
-            "REGISTER PEMBATALAN PENGELUARAN" => "http://$ip/bo/cetak-register/print?register=K2&tgl1=$periode1&tgl2=$periode2",
-            "REGISTER SJ" => "http://$ip/bo/cetak-register/print?register=O&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
-            "REGISTER TAC" => "http://$ip/bo/cetak-register/print?register=I&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
-            "REGISTER MPP" => "http://$ip/bo/cetak-register/print?register=X&jenis_dokumen=ALL&tgl1=$periode1&tgl2=$periode2&ukuran=besar",
-            "REGISTER BAPB" => "http://$ip/bo/cetak-register/print?register=F&tgl1=$periode1&tgl2=$periode2",
-            "REGISTER NBH" => "http://$ip/bo/cetak-register/print?register=H&tgl1=$periode1&tgl2=$periode2",
-            "DAFTAR PEMBELIAN RINGKASAN" => "http://$ip/bo/laporan/daftar-pembelian/cetak?tipe=1&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=&sup2=&mtr=&sort=1",
-            "DAFTAR RETUR PEMBELIAN RINGKASAN" => "http://$ip/bo/laporan/daftar-retur-pembelian/cetak?tipe=1&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=&sup2=",
-            "LAPORAN Rekap Sales Per Member" => "http://$ip/fo/laporan-kasir/rekap-evaluasi/print-rekap?tgl1=$periode1&tgl2=$periode2&member1=&member2=&outlet1=&outlet2=&suboutlet1=&suboutlet2=&jenis_customer=ALL&monitoring=ALL&sort=1&jenis_laporan=2&counter=y",
-            "LAPORAN PENGHITUNGAN PPN OUT SALES" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu6?date1=$date1&date2=$date2&cetak=1&export_type=pdf",
-            "LAPORAN CASHBACK EVENT per ITEM" => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$date1&dateB=$date2&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi",
-            "LAPORAN CASHBACK pt 500" => "http://$ip/fo/laporan-kasir/cei/printdocpt500hariall?dateA=$date1&dateB=$date2"
+            "$kc Register Bukti Pembatalan Penerimaan Barang" => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$periode1&tgl2=$periode2&jenis=B",
+            "$kc Register Pembatalan Pengeluaran Barang" => "http://$ip/bo/cetak-register/print?register=K2&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Surat Jalan" => "http://$ip/bo/cetak-register/print?register=O&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
+            "$kc Register Pembatalan Surat Jalan" => "http://$ip/bo/cetak-register/print?register=O2&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
+            "$kc Register Transfer Antar Cabang" => "http://$ip/bo/cetak-register/print?register=I&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
+            "$kc Register Pembatalan Transfer Antar Cabang" => "http://$ip/bo/cetak-register/print?register=I2&tgl1=$periode1&tgl2=$periode2&cabang=ALL",
+            "$kc Register Memo Penyesuaian Persediaan" => "http://$ip/bo/cetak-register/print?register=X&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Pembatalan Memo Penyesuaian Persediaan" => "http://$ip/bo/cetak-register/print?register=X1&tgl1=$periode1&tgl2=$periode2&ukuran=besar",
+            "$kc Register Nota NBH" => "http://$ip/bo/cetak-register/print?register=H&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Pembatalan Nota NBH" => "http://$ip/bo/cetak-register/print?register=H1&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Daftar Barang Baik ke Rusak" => "http://$ip/bo/cetak-register/print?register=Z2&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Daftar Barang Baik ke Retur" => "http://$ip/bo/cetak-register/print?register=Z1&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Bukti Perubahan Status" => "http://$ip/bo/cetak-register/print?register=Z3&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Repacking" => "http://$ip/bo/cetak-register/print?register=P&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register Berita Acara Pemusnahan Barang" => "http://$ip/bo/cetak-register/print?register=F&tgl1=$periode1&tgl2=$periode2",
+            "$kc Daftar Pembelian Ringkasan Divisi _ Departemen _ Kategori" => "http://$ip/bo/laporan/daftar-pembelian/cetak?tipe=1&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=&sup2=&mtr=&sort=1",
+            "$kc DAFTAR RETUR PEMBELIAN" => "http://$ip/bo/laporan/daftar-retur-pembelian/cetak?tipe=1&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=&sup2=",
+            "$kc __ POSISI & MUTASI PERSEDIAAN BARANG BAIK __" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc __ POSISI & MUTASI PERSEDIAAN BARANG RETUR __" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP08&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc __ POSISI & MUTASI PERSEDIAAN BARANG RUSAK __" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP10&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc LAPORAN REKAP ADJUSTMENT STOCK OPNAME" => "http://$ip/bo/lpp/register-lpp/cetak-bagian-2?menu=LPP01&export_type=pdf&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc LAPORAN PERHITUNGAN PPN OUT SALES" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu6?date1=$date1&date2=$date2&cetak=2&export_type=pdf",
+            "$kc lap_trn_vcr" => "http://$ip/fo/laporan-kasir/transaksivoucher/print?date1=$date1&date2=$date2",
+            "$kc LAPORAN POTONGAN _ EVENT _ ITEM" => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$date1&dateB=$date2&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi",
+            "$kc LAPORAN POTONGAN PER EVENT PROMOSI PER HARI" => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$date1&dateB=$date2&event1=nodata&event2=nodata&dimensions=all&type_laporan=hari",
+            "$kc Evaluasi Langganan Per Member $tgl_range_file" => "http://$ip/fo/laporan-kasir/rekap-evaluasi/print-detail?tgl1=$periode1&tgl2=$periode2&member1=&member2=&outlet1=&outlet2=&suboutlet1=&suboutlet2=&jenis_customer=ALL&monitoring=ALL&sort=1&jenis_laporan=1&counter=y"
         ];
 
-        // DATA DOWNLOAD (Hijau)
+        // DATA DOWNLOAD (EXCEL) - Format Menyesuaikan Referensi Excel
         $download_urls = [
-            "LAPORAN RINCIAN ADJUSTMENT STOCK OPNAME" => "http://$ip/bo/lpp/register-lpp/cetak-bagian-2?menu=LPP02&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "LAP CASHBACK POTONGAN PER ITEM" => "http://$ip/fo/laporan-kasir/cei/downloadExcel?dateA=$date1&dateB=$date2&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi",
-            "LPP BAIK (Excel)" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=excel&periode1=$periode1&periode2=$periode2&tipe=3&banyakitem=",
-            "LPP RETUR (Excel)" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP08&export_type=excel&periode1=$periode1&periode2=$periode2&tipe=3&banyakitem=",
-            "LPP RUSAK (Excel)" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP10&export_type=excel&periode1=$periode1&periode2=$periode2&tipe=3&banyakitem=",
-            "REGISTER BUKTI PENERIMAAN BARANG" => "http://$ip/bo/cetak-register/print?register=B&tgl1=$periode1&tgl2=$periode2",
-            "LAPORAN REKAP ADUSTMENT STOCK OPNAME" => "http://$ip/bo/lpp/register-lpp/cetak-bagian-2?menu=LPP01&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
-            "REGISTER NOTA PENGELUARAN BARANG (XL)" => "http://$ip/bo/cetak-register/print-excel?register=K&tgl1=$periode1&tgl2=$periode2&ukuran=besar",
-            "LAPORAN REKAP PEROLEHAN REWARD" => "http://$ip/fo/point-reward-member-merah/perolehan-point-reward-per-tanggal/cetak?menu=rekap&tgl1=$periode1&tgl2=$periode2",
-            "LAPORAN RINCIAN PEROLEHAN REWARD" => "http://$ip/fo/point-reward-member-merah/perolehan-point-reward-per-tanggal/cetak?menu=detail&tgl1=$periode1&tgl2=$periode2"
+            "$kc Register Bukti Penerimaan Barang_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/cetak-register/print?register=B&tgl1=$periode1&tgl2=$periode2&jenis=B",
+            "$kc Register Pembelian Per Hari_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/cetak-register/print?register=B1&tgl1=$periode1&tgl2=$periode2&jenis=B",
+            "$kc REGISTER NOTA PENGELUARAN BARANG_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/cetak-register/print-excel?register=K&tgl1=$periode1&tgl2=$periode2&ukuran=besar",
+            "$kc REGISTER REKAP NPB(RETUR) PERHARI_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/cetak-register/print?register=K1&tgl1=$periode1&tgl2=$periode2",
+            "$kc Register_BPB_NPB_per_PLU_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/cetak-register/print?register=BK&tgl1=$periode1&tgl2=$periode2",
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG BAIK_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP02&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG RETUR_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP09&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG RUSAK_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP11&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc LAPORAN RINCIAN ADJUSTMENT STOCK OPNAME_{$tgl_file}_{$jam_simulasi}" => "http://$ip/bo/lpp/register-lpp/cetak-bagian-2?menu=LPP02&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=&sup2=&tipe=3&banyakitem=",
+            "$kc lap_jual_perhari-excel-{$tgl_file}_{$jam_simulasi}" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu4?date1=$date1&date2=$date2&export_type=excel&lst_print=INDOGROSIR&ekspor=T",
+            "$kc lap_jual_perdept-excel-2-{$tgl_file}_{$jam_simulasi}" => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu2?date1=$date1&date2=$date2&grosira=F&export=T&export_type=excel&lst_print=INDOGROSIR",
+            "$kc LAPORAN RINCIAN PEROLEHAN REWARD POIN_{$tgl_file}_{$jam_simulasi}" => "http://$ip/fo/point-reward-member-merah/perolehan-point-reward-per-tanggal/cetak?menu=detail&tgl1=$periode1&tgl2=$periode2",
+            "$kc Lap Potongan Per Event Promosi-all_{$tgl_file}" => "http://$ip/fo/laporan-kasir/cei/downloadExcel?dateA=$date1&dateB=$date2&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi",
+
+            // Laporan Tambahan: Supplier
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG BAIK_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP13&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG RETUR_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP14&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
+            "$kc POSISI & MUTASI PERSEDIAAN BARANG RUSAK_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP15&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
+            "$kc Register Bukti Penerimaan Barang_{$tgl_file}_{$jam_simulasi} PT INTI CAKRAWALA CITRA ICC" => "http://$ip/bo/laporan/daftar-pembelian/cetak?tipe=4&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=$ks&sup2=$ks&mtr=&sort=1"
         ];
     ?>
 
@@ -489,7 +507,6 @@
                 status.innerHTML = 'Bot sedang login dan menarik data laporan bulanan... Harap bersabar.';
 
                 try {
-                    // PENTING: Gunakan window.location.hostname agar nembak ke server pusat
                     const serverIP = window.location.hostname;
                     const apiUrl = `http://${serverIP}:3030/api/tarik`;
 
@@ -513,17 +530,12 @@
 
                     if (response.ok) {
                         btn.innerHTML = '<i class="fas fa-check-circle"></i> PENARIKAN SELESAI!';
-
-                        // Siapkan URL Download
                         const downloadUrl = `http://${serverIP}:3030/download-zip/${result.downloadFile}`;
-
-                        // Tampilkan pesan sukses & tombol fallback
                         status.innerHTML = `<b>Sukses!</b> Paket Laporan ZIP siap.<br><br>
                         <a href="${downloadUrl}" style="color:#fff; background: linear-gradient(135deg, var(--green-glow), #15803d); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px; box-shadow: 0 5px 15px rgba(34,197,94,0.4);">
                             <i class="fas fa-download"></i> KLIK DI SINI JIKA DOWNLOAD TIDAK MUNCUL
                         </a>`;
 
-                        // Pancing Auto-Download
                         if (result.downloadFile) {
                             setTimeout(() => {
                                 window.location.href = downloadUrl;
@@ -536,7 +548,7 @@
                 } catch (error) {
                     console.error('Error:', error);
                     btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GAGAL KONEK KE BOT';
-                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message} (Pastikan Bot Node.js di server sudah nyala)</span>`;
+                    status.innerHTML = `<span style="color:#ef4444">Error: ${error.message}</span>`;
                 }
 
                 setTimeout(() => {
