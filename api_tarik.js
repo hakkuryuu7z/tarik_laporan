@@ -48,7 +48,7 @@ app.post('/api/tarik', async (req, res) => {
     let browser;
     try {
         browser = await puppeteer.launch({ 
-            headless: false, // PANTAU TERUS WAK!
+            headless: true, // PANTAU TERUS WAK!
             defaultViewport: { width: 1366, height: 768 }, 
             args: ['--start-maximized']
         });

@@ -403,6 +403,7 @@
                 ['name' => "3_{$kode_cabang} LPT PERHARI", 'url' => "http://$ip/fo/laporan-kasir/penjualan/printdocumentmenu4?date1=$t1_d&date2=$t2_d&export_type=excel&ekspor=T&lst_print=INDOGROSIR", 'type' => 'excel'],
                 ['name' => "4_{$kode_cabang} LAPORAN SALES VOUCHER", 'url' => "http://$ip/fo/laporan-kasir/transaksivoucher/print?date1=$t1_d&date2=$t2_d", 'type' => 'pdf'],
                 ['name' => "5_{$kode_cabang} POTONGAN EVENT PROMOSI", 'url' => "http://$ip/fo/laporan-kasir/cei/printdoc?dateA=$t1_d&dateB=$t2_d&event1=nodata&event2=nodata&dimensions=all&type_laporan=promosi", 'type' => 'pdf'],
+                ['name' => "11_{$kode_cabang} LAPORAN RINCIAN PEROLEHAN REWARD POIN", 'url' => "http://$ip/fo/point-reward-member-merah/perolehan-point-reward-per-tanggal/cetak?menu=detail&tgl1=$t1_d&tgl2=$t2_d", 'type' => 'excel'],
             ],
             "4. Laporan LPP" => [
                 ['name' => "6_{$kode_cabang} LPP BAIK", 'url' => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP01&export_type=excel&periode1=$t1_s&periode2=$t2_s&tipe=3", 'type' => 'excel'],
