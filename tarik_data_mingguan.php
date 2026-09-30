@@ -504,7 +504,7 @@
                     ?>
                 ];
 
-                if (!confirm(`Bot akan melakukan HITSTOK & LPP, lalu menyimpan file dengan format Cabang <?= $kode_cabang ?> ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
+                if (!confirm(`Bot akan melakukan Auto-Login (${koneksiIAS}), HITSTOK & LPP, lalu menyimpan file dengan format Cabang <?= $kode_cabang ?> ke folder "Downloads/${namaFolder}". Lanjutkan?`)) return;
 
                 const btn = this;
                 const status = document.getElementById('status-download');

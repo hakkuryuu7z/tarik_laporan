@@ -48,7 +48,7 @@ app.post('/api/tarik', async (req, res) => {
     let browser;
     try {
         browser = await puppeteer.launch({ 
-            headless: true, // PANTAU TERUS WAK!
+            headless: false, // PANTAU TERUS WAK!
             defaultViewport: { width: 1366, height: 768 }, 
             args: ['--start-maximized']
         });
@@ -322,13 +322,17 @@ app.post('/api/tarik', async (req, res) => {
                 }
 
                 if (downloadedFile) {
-                    const oldPath = path.join(targetFolder, downloadedFile);
-                    const ext = path.extname(downloadedFile) || '.xlsx';
-                    const newPath = path.join(targetFolder, `${safeName}${ext}`);
-                    try {
-                        if (fs.existsSync(newPath)) fs.unlinkSync(newPath);
-                        fs.renameSync(oldPath, newPath);
-                    } catch(err) {}
+                    if (item.noRename || item.keepOriginalName || (item.url && (item.url.includes('cetak-barang-rusak') || item.url.includes('cetak-barang-hilang')))) {
+                        console.log(`   [EXCEL] Nama file asli dipertahankan: ${downloadedFile}`);
+                    } else {
+                        const oldPath = path.join(targetFolder, downloadedFile);
+                        const ext = path.extname(downloadedFile) || '.xlsx';
+                        const newPath = path.join(targetFolder, `${safeName}${ext}`);
+                        try {
+                            if (fs.existsSync(newPath)) fs.unlinkSync(newPath);
+                            fs.renameSync(oldPath, newPath);
+                        } catch(err) {}
+                    }
                 }
             } else {
                 try {

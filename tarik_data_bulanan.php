@@ -350,6 +350,9 @@
         // Data format HHmmss untuk simulasi nama file persis Excel
         $jam_simulasi = date('His');
 
+        // Parameter Bulan untuk Laporan Barang Hilang / Rusak (format mm%2Fyyyy, contoh: 09%2F2026)
+        $bln_param = urlencode(date('m/Y', strtotime($tgl_akhir ?: $tgl_awal)));
+
         // DATA PRINT (PDF) - Format Menyesuaikan Referensi Excel
         $menu_urls = [
             "$kc Register Bukti Pembatalan Penerimaan Barang" => "http://$ip/bo/cetak-register/print?register=B2&tgl1=$periode1&tgl2=$periode2&jenis=B",
@@ -400,7 +403,11 @@
             "$kc POSISI & MUTASI PERSEDIAAN BARANG BAIK_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP13&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
             "$kc POSISI & MUTASI PERSEDIAAN BARANG RETUR_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP14&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
             "$kc POSISI & MUTASI PERSEDIAAN BARANG RUSAK_{$tgl_file}_{$jam_simulasi} ICC" => "http://$ip/bo/lpp/register-lpp/cetak?menu=LPP15&export_type=excel&periode1=$periode1&periode2=$periode2&prdcd1=&prdcd2=&dep1=&dep2=&mtr1=&mtr2=&kat1=&kat2=&sup1=$ks&sup2=$ks&tipe=3&banyakitem=",
-            "$kc Register Bukti Penerimaan Barang_{$tgl_file}_{$jam_simulasi} PT INTI CAKRAWALA CITRA ICC" => "http://$ip/bo/laporan/daftar-pembelian/cetak?tipe=4&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=$ks&sup2=$ks&mtr=&sort=1"
+            "$kc Register Bukti Penerimaan Barang_{$tgl_file}_{$jam_simulasi} PT INTI CAKRAWALA CITRA ICC" => "http://$ip/bo/laporan/daftar-pembelian/cetak?tipe=4&tgl1=$periode1&tgl2=$periode2&div1=&div2=&dep1=&dep2=&kat1=&kat2=&sup1=$ks&sup2=$ks&mtr=&sort=1",
+
+            // Laporan Biaya Barang Hilang & Rusak (Per Bulan)
+            "$kc REPORT BIAYA BARANG RUSAK PER-PLU" => "http://$ip/bo/laporan/laporan-biaya-barang-hilang-atau-rusak/cetak-barang-rusak?bln=$bln_param",
+            "$kc REPORT BIAYA BARANG HILANG PER-PLU" => "http://$ip/bo/laporan/laporan-biaya-barang-hilang-atau-rusak/cetak-barang-hilang?bln=$bln_param"
         ];
     ?>
 
@@ -491,7 +498,9 @@
                         echo "{ url: '$url', type: 'pdf', name: '" . addslashes($name) . "' },\n";
                     }
                     foreach ($download_urls as $name => $url) {
-                        echo "{ url: '$url', type: 'excel', name: '" . addslashes($name) . "' },\n";
+                        $isNoRename = (strpos($url, 'cetak-barang-rusak') !== false || strpos($url, 'cetak-barang-hilang') !== false);
+                        $noRenameStr = $isNoRename ? 'true' : 'false';
+                        echo "{ url: '$url', type: 'excel', name: '" . addslashes($name) . "', noRename: $noRenameStr },\n";
                     }
                     ?>
                 ];
